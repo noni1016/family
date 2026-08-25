@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>누리 첫돌잔치 초대장</title>
+<meta name="description" content="장세민 · 김경은의 딸 누리의 첫 생일에 소중한 분들을 초대합니다.">
+
+<!-- Open Graph (카카오톡/문자 공유 미리보기용) -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="누리의 첫 생일에 초대합니다 🎂">
+<meta property="og:description" content="2026.9.5 (토) 오후 4:30 · 한송정에서 누리의 첫돌을 함께 축하해주세요.">
+<meta property="og:image" content="https://noni1016.github.io/nuri-doljanchi/assets/poster.jpg">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎈</text></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --sky:#bfe6ff;
+    --sky-deep:#2f9ee0;
+    --mint:#cdf1e4;
+    --cream:#f4fbff;
+    --butter:#ffe27a;
+    --ink:#3f5266;
+    --ink-soft:#7a93a8;
+    --white:#ffffff;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Gowun Dodum', sans-serif;
+    background:linear-gradient(180deg, var(--sky) 0%, var(--cream) 30%, var(--cream) 100%);
+    color:var(--ink);
+    display:flex;
+    justify-content:center;
+    min-height:100vh;
+  }
+  .page{
+    width:100%;
+    max-width:480px;
+    min-height:100vh;
+    background:var(--cream);
+    position:relative;
+    overflow:hidden;
+    box-shadow:0 0 40px rgba(0,0,0,0.06);
+  }
+
+  /* floating decorations */
+  .deco{position:absolute; font-size:28px; opacity:0.55; pointer-events:none; animation:float 6s ease-in-out infinite;}
+  .deco.d1{top:6%; left:6%; animation-delay:0s;}
+  .deco.d2{top:14%; right:8%; font-size:22px; animation-delay:1.2s;}
+  .deco.d3{top:2%; right:22%; font-size:18px; animation-delay:2.4s;}
+  .deco.d4{top:20%; left:16%; font-size:34px; opacity:0.35; animation-delay:0.8s;}
+  @keyframes float{
+    0%,100%{transform:translateY(0) rotate(-4deg);}
+    50%{transform:translateY(-10px) rotate(4deg);}
+  }
+
+  section{position:relative; padding:28px 24px;}
+
+  /* HERO */
+  .hero{padding-top:36px; text-align:center;}
+  .hero .eyebrow{
+    font-family:'Jua', sans-serif;
+    color:var(--sky-deep);
+    font-size:18px;
+    letter-spacing:1px;
+    margin-bottom:6px;
+  }
+  .hero h1{
+    font-size:26px;
+    line-height:1.4;
+    margin:0 0 22px;
+    font-weight:400;
+  }
+  .hero h1 b{color:var(--sky-deep); font-weight:700;}
+
+  .video-frame{
+    position:relative;
+    border-radius:24px;
+    overflow:hidden;
+    box-shadow:0 14px 30px rgba(47,158,224,0.28);
+    border:6px solid var(--white);
+    background:#000;
+  }
+  .video-frame video{
+    display:block;
+    width:100%;
+    height:auto;
+  }
+  .sound-btn{
+    position:absolute;
+    right:12px;
+    bottom:12px;
+    width:42px;
+    height:42px;
+    border-radius:50%;
+    border:none;
+    background:rgba(255,255,255,0.9);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:18px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.15);
+  }
+
+  .dday{
+    margin-top:18px;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:var(--white);
+    padding:10px 20px;
+    border-radius:999px;
+    border:2px solid #e3f3ff;
+    font-size:15px;
+    color:var(--ink-soft);
+    box-shadow:0 4px 14px rgba(47,158,224,0.1);
+  }
+  .dday b{color:var(--sky-deep); font-size:17px;}
+
+  /* GREETING CARD */
+  .card{
+    background:var(--white);
+    border-radius:22px;
+    padding:30px 24px;
+    border:2px solid #e3f3ff;
+    box-shadow:0 6px 20px rgba(47,158,224,0.08);
+  }
+  .section-title{
+    font-family:'Jua', sans-serif;
+    font-size:20px;
+    color:var(--sky-deep);
+    text-align:center;
+    margin:0 0 18px;
+  }
+  .greeting p{
+    font-size:16px;
+    line-height:1.9;
+    margin:0 0 14px;
+    text-align:center;
+    color:var(--ink);
+  }
+  .signature{
+    margin-top:20px;
+    text-align:center;
+    font-size:15.5px;
+    color:var(--ink-soft);
+    line-height:1.8;
+  }
+  .signature .baby{
+    display:inline-block;
+    margin-top:6px;
+    font-family:'Jua', sans-serif;
+    font-size:19px;
+    color:var(--sky-deep);
+  }
+
+  /* INFO */
+  .info-list{list-style:none; margin:0; padding:0;}
+  .info-list li{
+    display:flex;
+    align-items:flex-start;
+    gap:14px;
+    padding:14px 4px;
+    border-bottom:1px dashed #f1e3d8;
+    font-size:15.5px;
+    line-height:1.6;
+  }
+  .info-list li:last-child{border-bottom:none;}
+  .info-list .ico{
+    flex:0 0 auto;
+    width:38px;height:38px;
+    border-radius:50%;
+    background:var(--butter);
+    display:flex;align-items:center;justify-content:center;
+    font-size:18px;
+  }
+  .info-list .txt b{display:block; color:var(--ink); margin-bottom:2px;}
+  .info-list .txt span{color:var(--ink-soft); font-size:14px;}
+
+  .btn-row{display:flex; gap:10px; margin-top:20px;}
+  .btn{
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    text-decoration:none;
+    padding:13px 10px;
+    border-radius:14px;
+    font-size:14.5px;
+    font-weight:600;
+    text-align:center;
+    transition:transform 0.08s ease, box-shadow 0.08s ease;
+  }
+  .btn-primary{background:var(--sky-deep); color:#fff; box-shadow:0 4px 0 #1c7bb0, 0 8px 18px rgba(47,158,224,0.35);}
+  .btn-secondary{background:var(--mint); color:#3a6f60; box-shadow:0 4px 0 #8ed3bb;}
+  .btn:active{transform:translateY(3px); box-shadow:none;}
+
+  /* LOCATION */
+  .place-name{font-size:19px; font-weight:700; text-align:center; margin-bottom:4px;}
+  .place-sub{text-align:center; color:var(--ink-soft); font-size:14.5px; margin-bottom:18px;}
+
+  .parking-box{
+    margin-top:18px;
+    background:#fff7ec;
+    border:1px solid var(--butter);
+    border-radius:16px;
+    padding:16px 18px;
+    font-size:14.5px;
+    line-height:1.75;
+    color:#7a6a4a;
+  }
+  .parking-box b{color:#c98a1f;}
+
+  footer{
+    text-align:center;
+    padding:36px 24px 48px;
+  }
+  footer .thanks{
+    font-family:'Jua', sans-serif;
+    font-size:19px;
+    color:var(--sky-deep);
+    margin-bottom:8px;
+  }
+  footer .small{
+    font-size:13px;
+    color:#c9bcb9;
+  }
+
+  .gap{height:14px;}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <span class="deco d1">☁️</span>
+  <span class="deco d2">⭐</span>
+  <span class="deco d3">✨</span>
+  <span class="deco d4">☁️</span>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="eyebrow">누리의 첫 생일 초대장</div>
+    <h1>사랑하는 우리 아가<br><b>누리</b>의 첫 번째 생일에<br>소중한 분들을 초대합니다</h1>
+
+    <div class="video-frame">
+      <video id="inviteVideo" poster="assets/poster.jpg" playsinline autoplay muted loop preload="metadata">
+        <source src="assets/invite.mp4" type="video/mp4">
+      </video>
+      <button class="sound-btn" id="soundBtn" aria-label="소리 켜기/끄기">🔇</button>
+    </div>
+
+    <div class="dday" id="ddayBox">
+      <span>누리의 첫 생일까지</span> <b id="ddayNum">D-day</b>
+    </div>
+  </section>
+
+  <!-- GREETING -->
+  <section>
+    <div class="card greeting">
+      <div class="section-title">💌 초대의 말씀</div>
+      <p>
+        장세민 · 김경은의 딸, 누리가 태어난 지<br>
+        벌써 1년이 되었습니다.
+      </p>
+      <p>
+        "하나님이 만드신 세상을 마음껏 누리면서 살라"는<br>
+        바람을 담아 지은 이름, 누리.<br>
+        이름처럼 밝고 건강하게<br>자라준 지난&nbsp;1년,<br>
+        늘 곁에서 축복해 주신 덕분입니다.
+      </p>
+      <p>
+        작지만 소중한 자리에 오셔서<br>
+        누리의 첫 생일을 함께 누려주시면<br>
+        더없이 큰 기쁨이겠습니다.
+      </p>
+      <div class="signature">
+        장세민 · 김경은의 딸
+        <span class="baby">누리 첫돌에 초대합니다 :)</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- DATE / TIME -->
+  <section>
+    <div class="card">
+      <div class="section-title">📅 초대 일시</div>
+      <ul class="info-list">
+        <li>
+          <div class="ico">📆</div>
+          <div class="txt"><b>2026년 9월 5일 토요일</b><span>Date</span></div>
+        </li>
+        <li>
+          <div class="ico">⏰</div>
+          <div class="txt"><b>오후 4:30 ~ 6:30</b><span>16:30 – 18:30</span></div>
+        </li>
+      </ul>
+      <div class="btn-row">
+        <a class="btn btn-primary" id="calBtn" href="#">🗓️ 캘린더에 추가</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- LOCATION -->
+  <section>
+    <div class="card">
+      <div class="section-title">📍 오시는 길</div>
+      <div class="place-name">한송정</div>
+      <div class="place-sub">돌잔치가 열리는 장소입니다</div>
+
+      <div class="btn-row">
+        <a class="btn btn-primary" href="https://naver.me/52R5G0gR" target="_blank" rel="noopener">🗺️ 네이버 지도에서 보기</a>
+      </div>
+
+      <div class="parking-box">
+        🚗 <b>발렛 주차</b> 이용 가능하며, 주차비는 저희가 지원해드립니다.<br>
+        🅿️ 만차 시에는 인근 <b>평촌스마트스퀘어 공영주차장</b>을 이용해주세요.
+      </div>
+      <div class="btn-row">
+        <a class="btn btn-secondary" href="https://naver.me/xrSr3RDt" target="_blank" rel="noopener">🅿️ 공영주차장 지도 보기</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="thanks">참석해주셔서<br>축하해주시면 감사하겠습니다 💛</div>
+    <div class="small">Nuri's First Birthday · 2026. 9. 5.</div>
+  </footer>
+
+</div>
+
+<script>
+  // sound toggle
+  const video = document.getElementById('inviteVideo');
+  const soundBtn = document.getElementById('soundBtn');
+  soundBtn.addEventListener('click', () => {
+    video.muted = !video.muted;
+    soundBtn.textContent = video.muted ? '🔇' : '🔊';
+    if(!video.muted){ video.play().catch(()=>{}); }
+  });
+
+  // D-day
+  function updateDday(){
+    const target = new Date('2026-09-05T16:30:00+09:00');
+    const now = new Date();
+    const diffMs = target - now;
+    const el = document.getElementById('ddayNum');
+    if(diffMs <= 0){
+      el.textContent = 'D-Day 🎉';
+      return;
+    }
+    const days = Math.ceil(diffMs / (1000*60*60*24));
+    el.textContent = 'D-' + days;
+  }
+  updateDday();
+
+  // add to calendar (.ics)
+  document.getElementById('calBtn').addEventListener('click', function(e){
+    e.preventDefault();
+    const ics = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Nuri First Birthday//KO',
+      'BEGIN:VEVENT',
+      'UID:' + Date.now() + '@nuri-doljanchi',
+      'DTSTAMP:20260825T000000Z',
+      'DTSTART:20260905T073000Z',
+      'DTEND:20260905T093000Z',
+      'SUMMARY:누리 첫돌잔치',
+      'LOCATION:한송정',
+      'DESCRIPTION:장세민 · 김경은의 딸 누리의 첫 생일에 초대합니다.',
+      'END:VEVENT',
+      'END:VCALENDAR'
+    ].join('\r\n');
+    const blob = new Blob([ics], {type:'text/calendar;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '누리_첫돌잔치.ics';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+</script>
+</body>
+</html>
