@@ -1,0 +1,1147 @@
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>푸꾸옥 가족여행</title>
+<style>
+/* ===== Layout concept: full-screen mobile app shell with a bottom tab bar;
+   content panes switch via location.hash (#it #map #budget #info) ===== */
+:root{
+  --bg:#FAF6EC; --surface:#FFFFFF; --surface-2:#F2E9D6; --fg:#1E2A27; --muted:#6C756E;
+  --accent:#E8713E; --accent-ink:#FFFFFF; --teal:#0E7C73; --north:#C98A1F; --south:#C14F86;
+  --line:#E6DAC0; --danger:#C24B3F;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#101E1B; --surface:#17322C; --surface-2:#1C3A33; --fg:#EEEAE0; --muted:#9FB0A9;
+    --accent:#FF9566; --teal:#3FC2B6; --north:#E7B94E; --south:#E784AE; --line:#2B4C44; --danger:#FF8575;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#101E1B; --surface:#17322C; --surface-2:#1C3A33; --fg:#EEEAE0; --muted:#9FB0A9;
+  --accent:#FF9566; --teal:#3FC2B6; --north:#E7B94E; --south:#E784AE; --line:#2B4C44; --danger:#FF8575;
+  color-scheme: dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font-family:"Noto Sans KR",system-ui,-apple-system,sans-serif;
+  padding-left:max(16px, env(safe-area-inset-left,0px));
+  padding-right:max(16px, env(safe-area-inset-right,0px));
+  -webkit-font-smoothing:antialiased;
+}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:20;background:var(--surface)}
+h1,h2,h3{font-family:"Gowun Batang",serif; text-wrap:balance; margin:0}
+.tnum{font-variant-numeric:tabular-nums}
+a{color:var(--teal)}
+button{font:inherit}
+::selection{background:var(--accent); color:var(--accent-ink)}
+
+#app{max-width:560px; margin:0 auto; min-height:100%; display:flex; flex-direction:column}
+
+/* ---- header ---- */
+.topbar{
+  position:sticky; top:env(safe-area-inset-top,0px); z-index:10;
+  background:var(--surface); border-bottom:1px solid var(--line);
+  padding:14px 0 12px; margin:0 -16px; padding-left:16px; padding-right:16px;
+}
+.topbar .brand{display:flex; align-items:baseline; justify-content:space-between; gap:8px}
+.topbar h1{font-size:20px; letter-spacing:.2px}
+.topbar .dday{font-size:13px; color:var(--accent); font-weight:700; white-space:nowrap}
+.topbar .sub{color:var(--muted); font-size:12.5px; margin-top:2px}
+
+/* ---- tab panes ---- */
+main{flex:1; padding:18px 0 100px}
+.pane{display:none}
+.pane.active{display:block; animation:fade .18s ease}
+@keyframes fade{from{opacity:0; transform:translateY(4px)} to{opacity:1; transform:none}}
+@media (prefers-reduced-motion:reduce){.pane.active{animation:none}}
+
+/* ---- bottom tabs ---- */
+nav.tabs{
+  position:fixed; left:0; right:0; bottom:0; z-index:20;
+  background:var(--surface); border-top:1px solid var(--line);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+.tabs-inner{
+  max-width:560px; margin:0 auto; display:grid; grid-template-columns:repeat(4,1fr);
+  padding:6px max(10px, env(safe-area-inset-left,0px)) 6px max(10px, env(safe-area-inset-right,0px));
+}
+.tab-btn{
+  background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:3px;
+  padding:7px 2px; color:var(--muted); font-size:11px; border-radius:10px; cursor:pointer;
+}
+.tab-btn svg{width:21px; height:21px}
+.tab-btn[aria-current="true"]{color:var(--accent)}
+.tab-btn[aria-current="true"] svg{filter:none}
+
+/* ---- generic card ---- */
+.card{
+  background:var(--surface); border:1px solid var(--line); border-radius:16px;
+  padding:16px; margin-bottom:12px;
+}
+.section-title{font-size:16px; margin:22px 0 10px; display:flex; align-items:center; gap:8px}
+.section-title:first-child{margin-top:0}
+.pill{
+  display:inline-flex; align-items:center; font-size:11.5px; font-weight:700; padding:3px 9px;
+  border-radius:99px; letter-spacing:.2px;
+}
+.pill.region-중부{background:color-mix(in srgb, var(--teal) 18%, transparent); color:var(--teal)}
+.pill.region-북부{background:color-mix(in srgb, var(--north) 20%, transparent); color:var(--north)}
+.pill.region-남부{background:color-mix(in srgb, var(--south) 18%, transparent); color:var(--south)}
+.pill.budget-pill{background:color-mix(in srgb, var(--accent) 16%, transparent); color:var(--accent); font-variant-numeric:tabular-nums}
+.pill.actual-pill{background:color-mix(in srgb, var(--teal) 18%, transparent); color:var(--teal); font-variant-numeric:tabular-nums}
+.budget-line.actual-line b{color:var(--teal)}
+.static-banner{
+  font-size:11.5px; text-align:center; padding:8px max(16px, env(safe-area-inset-left,0px));
+  background:color-mix(in srgb, var(--accent) 12%, var(--surface)); color:var(--muted); border-bottom:1px solid var(--line);
+}
+body.static-mode .tl-item{cursor:default}
+.day-body .budget-line{display:flex; align-items:baseline; gap:6px; font-size:12.5px; color:var(--muted); margin:2px 0 10px}
+.day-body .budget-line b{color:var(--fg); font-size:13px}
+.muted{color:var(--muted)}
+.row{display:flex; align-items:center; gap:8px}
+.between{justify-content:space-between}
+hr.line{border:none; border-top:1px solid var(--line); margin:12px 0}
+
+/* buttons */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  border-radius:11px; padding:10px 14px; font-size:13.5px; font-weight:700; cursor:pointer;
+  border:1px solid var(--line); background:var(--surface-2); color:var(--fg);
+}
+.btn.primary{background:var(--accent); color:var(--accent-ink); border-color:transparent}
+.btn.ghost{background:transparent}
+.btn.sm{padding:7px 11px; font-size:12.5px; border-radius:9px}
+.btn:disabled{opacity:.5; cursor:default}
+input,select,textarea{
+  font:inherit; color:var(--fg); background:var(--surface-2); border:1px solid var(--line);
+  border-radius:10px; padding:10px 11px; width:100%;
+}
+textarea{resize:vertical; min-height:72px}
+label{font-size:12.5px; color:var(--muted); font-weight:700; display:block; margin-bottom:5px}
+.field{margin-bottom:12px}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+
+/* ==== 일정 (아코디언) ==== */
+.day-card{padding:0; overflow:hidden}
+.day-head{display:flex; align-items:flex-start; gap:12px; padding:14px 16px; cursor:pointer; user-select:none}
+.day-card .daynum{
+  flex-shrink:0; width:30px; height:30px; border-radius:50%; margin-top:1px;
+  background:var(--surface-2); color:var(--fg); display:flex; align-items:center; justify-content:center;
+  font-weight:700; font-size:12.5px; font-family:"Gowun Batang",serif;
+}
+.day-card.today .daynum{background:var(--accent); color:var(--accent-ink)}
+.day-head .dinfo{flex:1; min-width:0}
+.day-head .dhead{font-size:14.5px; font-weight:700}
+.day-head .dhead .muted{font-weight:400}
+.day-head .dsummary{font-size:12.5px; color:var(--muted); margin-top:3px; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical}
+.day-card.open .dsummary{display:none}
+.day-head .region-pill{flex-shrink:0; margin-top:1px}
+.day-head .chevron{flex-shrink:0; margin-top:4px; transition:transform .18s ease; color:var(--muted)}
+.day-card.open .chevron{transform:rotate(180deg)}
+@media (prefers-reduced-motion:reduce){.day-head .chevron{transition:none}}
+.day-body{padding:0 16px 16px; border-top:1px solid var(--line); margin-top:2px}
+.day-card .dtitle{margin-top:14px; font-size:14.5px; line-height:1.55}
+.day-card .hotel-tag{margin-top:10px; font-size:12px; color:var(--muted); display:flex; align-items:center; gap:5px}
+.note-label{margin-top:18px; margin-bottom:2px; font-size:11.5px; font-weight:700; color:var(--muted); letter-spacing:.3px}
+
+/* ---- timeline (세부 일정) ---- */
+.timeline{position:relative; margin:10px 0 2px; padding-left:30px}
+.timeline::before{content:""; position:absolute; left:10px; top:3px; bottom:3px; width:2px; background:var(--line)}
+.tl-item{position:relative; padding-bottom:16px; cursor:pointer; border-radius:8px; margin:0 -6px; padding-left:6px; padding-right:6px}
+.tl-item:last-child{padding-bottom:2px}
+.tl-item:hover, .tl-item:focus-visible{background:var(--surface-2)}
+.tl-dot{
+  position:absolute; left:-30px; top:1px; width:21px; height:21px; border-radius:50%;
+  background:var(--surface); border:2px solid var(--line); display:flex; align-items:center; justify-content:center;
+}
+.tl-time{font-size:11px; font-weight:700; color:var(--accent); font-variant-numeric:tabular-nums}
+.tl-tz{display:inline-flex; align-items:center; margin-left:5px; vertical-align:-2px}
+.tl-tz .tz-emoji{font-size:13px; line-height:1}
+.tl-tz .tz-svg{display:none; width:14px; height:14px; border-radius:50%; overflow:hidden; box-shadow:0 0 0 1px color-mix(in srgb, var(--fg) 15%, transparent)}
+.tl-tz .tz-svg svg{width:100%; height:100%; display:block}
+@media (pointer:fine){
+  .tl-tz .tz-emoji{display:none}
+  .tl-tz .tz-svg{display:inline-flex}
+}
+.tl-title{font-size:14px; font-weight:700; margin-top:1px}
+.tl-desc{font-size:12.5px; color:var(--muted); margin-top:3px; line-height:1.5; white-space:pre-line}
+.tl-empty{color:var(--muted); font-size:12.5px; padding:6px 0 10px}
+.tl-add{margin-top:4px; width:100%}
+
+/* ==== 카테고리별 지출 / 계획예산 ==== */
+.cat-row{margin-bottom:12px}
+.cat-row:last-child{margin-bottom:0}
+.cat-top{display:flex; justify-content:space-between; align-items:baseline; font-size:12.5px; margin-bottom:5px}
+.cat-top .cat-name{font-weight:700; display:flex; align-items:center; gap:6px}
+.cat-top .cat-name i.dot{width:8px; height:8px; border-radius:50%; display:inline-block}
+.cat-top .cat-pct{color:var(--muted); font-size:11px}
+.cat-bar-bg{height:8px; border-radius:4px; background:var(--surface-2); overflow:hidden}
+.cat-bar-fill{height:100%; border-radius:4px; transition:width .3s ease}
+.cat-total-row{display:flex; justify-content:space-between; margin-top:12px; padding-top:10px; border-top:1px solid var(--line); font-size:13px; font-weight:700}
+.plan-day-row{display:flex; justify-content:space-between; gap:10px; padding:11px 0; border-bottom:1px solid var(--line)}
+.plan-day-row:last-child{border-bottom:none}
+.plan-day-row .pd-label{font-size:12.5px}
+.plan-day-row .pd-label .pd-date{color:var(--muted); font-size:11px; display:block; margin-bottom:1px}
+.plan-day-row .pd-amt{font-size:13px; font-weight:700; white-space:nowrap}
+
+/* ==== 지도 ==== */
+.map-wrap{
+  background:linear-gradient(180deg, color-mix(in srgb, var(--teal) 10%, var(--surface)), var(--surface));
+  border:1px solid var(--line); border-radius:18px; padding:14px; margin-bottom:14px; overflow:hidden;
+}
+.map-note{font-size:11.5px; color:var(--muted); margin-bottom:10px}
+.island{width:100%; height:auto; display:block}
+.pin{cursor:pointer}
+.pin circle.halo{opacity:0}
+.pin:hover circle.halo, .pin:focus circle.halo{opacity:.25}
+.pin-label{font-family:"Noto Sans KR",sans-serif; font-weight:700; pointer-events:none}
+.legend{display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; font-size:11.5px}
+.legend .dot{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; vertical-align:-1px}
+.place-list .place-item{padding:12px 0; border-bottom:1px solid var(--line)}
+.place-list .place-item:last-child{border-bottom:none}
+.place-name{font-weight:700; font-size:14px}
+.place-sub{font-size:12px; color:var(--muted); margin-top:2px}
+.filter-row{display:flex; gap:7px; margin-bottom:14px; flex-wrap:wrap}
+.chip{
+  border:1px solid var(--line); background:var(--surface); border-radius:99px; padding:7px 13px;
+  font-size:12.5px; font-weight:700; color:var(--muted); cursor:pointer;
+}
+.chip[aria-pressed="true"]{background:var(--fg); color:var(--bg); border-color:var(--fg)}
+
+/* ==== 정산 ==== */
+.sum-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px}
+.sum-tile{background:var(--surface-2); border-radius:14px; padding:13px}
+.sum-tile .label{font-size:11.5px; color:var(--muted); font-weight:700}
+.sum-tile .value{font-size:19px; font-weight:700; margin-top:4px; font-family:"Gowun Batang",serif}
+.settle-banner{
+  background:color-mix(in srgb, var(--accent) 14%, var(--surface)); border:1px solid color-mix(in srgb, var(--accent) 35%, var(--line));
+  border-radius:14px; padding:14px; margin-bottom:16px; font-size:14px; line-height:1.55;
+}
+.settle-banner b{font-family:"Gowun Batang",serif; font-size:16px}
+.expense-item{padding:11px 0; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; gap:10px}
+.expense-item:last-child{border-bottom:none}
+.expense-item .item-name{font-weight:700; font-size:13.5px}
+.expense-item .item-meta{font-size:11.5px; color:var(--muted); margin-top:2px}
+.expense-item .item-amt{font-weight:700; font-size:14px; white-space:nowrap; font-family:"Gowun Batang",serif}
+.expense-item .del{background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;padding:2px 0}
+.cat-tag{font-size:10.5px; padding:2px 7px; border-radius:99px; background:var(--surface-2); color:var(--muted); font-weight:700}
+.empty{color:var(--muted); font-size:13px; text-align:center; padding:28px 10px}
+.fab{
+  position:fixed; right:max(18px, env(safe-area-inset-right,0px)); bottom:calc(84px + env(safe-area-inset-bottom,0px));
+  z-index:19; width:52px; height:52px; border-radius:50%; background:var(--accent); color:var(--accent-ink);
+  border:none; box-shadow:0 6px 18px color-mix(in srgb, var(--accent) 45%, transparent); display:flex;
+  align-items:center; justify-content:center; cursor:pointer;
+}
+.sheet-backdrop{position:fixed; inset:0; background:rgba(10,16,14,.45); z-index:30}
+.sheet{
+  position:fixed; left:0; right:0; bottom:0; z-index:31; background:var(--surface);
+  border-radius:20px 20px 0 0; padding:18px 16px calc(20px + env(safe-area-inset-bottom,0px));
+  max-width:560px; margin:0 auto;
+}
+.sheet h3{font-size:17px; margin-bottom:14px}
+.sheet-close{position:absolute; top:14px; right:16px; background:none; border:none; color:var(--muted); font-size:20px; cursor:pointer}
+
+/* ==== 정보 (항공/숙소) ==== */
+.info-card{margin-bottom:12px}
+.info-card .ic-head{display:flex; justify-content:space-between; align-items:flex-start; gap:10px}
+.info-card h3{font-size:15.5px}
+.info-card .nights{font-size:11.5px; color:var(--muted); margin-top:3px}
+.info-card .cost-row{margin-top:10px; padding-top:10px; border-top:1px dashed var(--line); font-size:12.5px; display:flex; justify-content:space-between}
+.info-card .cost-row b{font-family:"Gowun Batang",serif; font-size:14px}
+.booking-ref{font-size:11.5px; color:var(--muted); margin-top:4px}
+.flight-row{display:flex; gap:10px; align-items:center; margin-bottom:10px}
+.flight-badge{width:34px; height:34px; border-radius:9px; background:var(--surface-2); display:flex; align-items:center; justify-content:center; flex-shrink:0}
+.save-row{display:flex; justify-content:flex-end; margin-top:10px}
+.sr-only{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0)}
+</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+
+<div id="app">
+  <header class="topbar">
+    <div class="brand">
+      <h1>푸꾸옥 가족여행</h1>
+      <span class="dday" id="ddayLabel"></span>
+    </div>
+    <div class="sub">2026.10.27 – 11.13 · 경은 · 세민 · 우리 · 누리</div>
+  </header>
+  <div class="static-banner">📖 보기 전용 스냅샷 (2026.10.24 기준) · 최신 수정은 Claude 앱에서 계속돼요</div>
+
+  <main>
+    <!-- ============ 일정 ============ -->
+    <section class="pane" id="pane-it">
+      <div class="section-title"><h2>날짜별 일정</h2></div>
+      <div id="itList"></div>
+    </section>
+
+    <!-- ============ 지도 ============ -->
+    <section class="pane" id="pane-map">
+      <div class="section-title"><h2>지도</h2></div>
+      <div class="card" id="customMapCard"></div>
+      <div class="map-wrap">
+        <p class="map-note">앱 안에서 빠르게 훑어보는 개략도예요. 확대·축소가 되는 실제 지도는 핀을 누르거나 위 'Google 지도 전체 보기'를 이용하세요.</p>
+        <svg id="islandSvg" class="island" viewBox="0 0 320 460" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div class="legend">
+          <span><i class="dot" style="background:var(--north)"></i>북부</span>
+          <span><i class="dot" style="background:var(--teal)"></i>중부</span>
+          <span><i class="dot" style="background:var(--south)"></i>남부</span>
+        </div>
+      </div>
+      <div class="filter-row" id="mapFilters"></div>
+      <div class="card place-list" id="placeList"></div>
+    </section>
+
+    <!-- ============ 정산 ============ -->
+    <section class="pane" id="pane-budget">
+      <div class="section-title"><h2>예산 &amp; 정산</h2></div>
+      <div class="sum-grid">
+        <div class="sum-tile"><div class="label">총 지출</div><div class="value tnum" id="sumTotal">–</div></div>
+        <div class="sum-tile"><div class="label">1인당 예상 분담</div><div class="value tnum" id="sumPer">–</div></div>
+      </div>
+      <div class="settle-banner" id="settleBanner">불러오는 중…</div>
+
+      <div class="row between" style="margin:18px 0 10px; align-items:center">
+        <h2 class="section-title" style="margin:0; font-size:15px">카테고리별 지출</h2>
+      </div>
+      <div class="card" id="categoryBreakdown" style="padding:14px 16px; margin-bottom:14px"></div>
+
+      <div class="row between" style="margin:18px 0 10px; align-items:center">
+        <h2 class="section-title" style="margin:0; font-size:15px">계획 예산 (예상)</h2>
+        <button class="btn ghost sm" id="planToggle" aria-expanded="false" type="button">일자별 보기</button>
+      </div>
+      <div class="card" style="padding:14px 16px; margin-bottom:14px">
+        <div class="cost-row"><span class="muted">숙소 비용 (고정, 이미 결제)</span><b class="tnum" id="planHotel">–</b></div>
+        <div class="cost-row"><span class="muted">항공권 비용 (고정, 이미 결제)</span><b class="tnum" id="planFlight">–</b></div>
+        <div class="cost-row"><span class="muted">현지 변동비 예상 (식비·입장권·교통·마사지·팁 등)</span><b class="tnum" id="planVariable">–</b></div>
+        <div class="cost-row" style="border-top:1px solid var(--line); margin-top:8px; padding-top:10px">
+          <span class="muted" style="font-weight:700">전체 예상 총액</span>
+          <b class="tnum" id="planGrand" style="font-size:16px; color:var(--accent)">–</b>
+        </div>
+        <p class="muted" style="font-size:11.5px; margin:8px 0 0; line-height:1.5">카드(트래블로그)로 결제 가능한 곳이 대부분이고, 카드가 안 되는 로컬 식당·야시장·팁 정도만 현금으로 쓴다는 가정의 추정치예요. 실제 지출은 아래 "지출 내역"에 기록하면서 비교해보세요.</p>
+      </div>
+      <div id="planDayList" class="card" style="padding:4px 16px; margin-bottom:14px" hidden></div>
+
+      <div class="row between" style="margin-bottom:10px">
+        <h2 class="section-title" style="margin:0; font-size:15px">지출 내역</h2>
+        <span class="muted" id="expenseCount" style="font-size:12px"></span>
+      </div>
+      <div class="card" style="padding:4px 16px">
+        <div id="expenseList"><p class="empty">불러오는 중…</p></div>
+      </div>
+    </section>
+
+    <!-- ============ 정보 ============ -->
+    <section class="pane" id="pane-info">
+      <div class="section-title"><h2>항공권</h2></div>
+      <div class="card" id="flightCard"></div>
+
+      <div class="section-title"><h2>숙소</h2></div>
+      <div id="hotelList"></div>
+    </section>
+  </main>
+
+  <button class="fab" id="fabAdd" aria-label="지출 추가" hidden>
+    <svg viewBox="0 0 24 24" fill="none" width="24" height="24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/></svg>
+  </button>
+
+  <nav class="tabs" aria-label="메인 메뉴">
+    <div class="tabs-inner">
+      <button class="tab-btn" data-tab="it" aria-current="true">
+        <svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="5" width="17" height="15" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 9.5h17M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        일정
+      </button>
+      <button class="tab-btn" data-tab="map">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21Z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="9.5" r="2.4" stroke="currentColor" stroke-width="1.8"/></svg>
+        지도
+      </button>
+      <button class="tab-btn" data-tab="budget">
+        <svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="6" width="17" height="12.5" rx="2.2" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 10.5h17" stroke="currentColor" stroke-width="1.8"/><circle cx="8" cy="14.5" r="1.1" fill="currentColor"/></svg>
+        정산
+      </button>
+      <button class="tab-btn" data-tab="info">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M3.5 11 12 4l8.5 7M6 10v9.5h5.5V14h1v5.5H18V10" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        정보
+      </button>
+    </div>
+  </nav>
+</div>
+
+<script>
+/* ---------------------------------------------------------------
+   DATA
+--------------------------------------------------------------- */
+const TODAY_ISO = '2026-10-22'; // fallback if Date is off in preview contexts
+
+const HOTELS = [
+  { id:'sonasea', name:'베스트 웨스턴 프리미어 소나씨 푸꾸옥', en:'Best Western Premier Sonasea Phu Quoc',
+    region:'중부', address:'Duong Bao Hamlet, Duong To Commune, Phu Quoc, Kien Giang, Vietnam',
+    pos:[46,255], checkin:'2026-10-27', checkout:'2026-10-31', nights:4,
+    cost:635707, payer:'세민', ref:'트립닷컴 예약 1400829632476907' },
+  { id:'windy', name:'Windy Hotel Phú Quốc', en:'Windy Hotel Phu Quoc',
+    region:'북부', address:'Phu Quoc, Kien Giang, Vietnam (10.3265, 103.8627)',
+    pos:[54,66], checkin:'2026-10-31', checkout:'2026-11-07', nights:7,
+    cost:510000, payer:'현지 지불 (9,760,500동)', ref:'아고다 예약 1781458427' },
+  { id:'novus', name:'노부스 솔 호텔 (Novus Sol Hotel & Apartment)', en:'Novus Sol Hotel & Apartment',
+    region:'남부', address:'Sunset Town 인근, Phu Quoc (10.0258, 104.0089)',
+    pos:[150,360], checkin:'2026-11-07', checkout:'2026-11-11', nights:4,
+    cost:292028, payer:'세민', ref:'트립닷컴 예약 1400829517430894' },
+  { id:'premier', name:'프리미어레지던스 (Premier Residences Phu Quoc Emerald Bay)', en:'Premier Residences Phu Quoc Emerald Bay',
+    region:'남부', address:'Khem Beach, An Thoi Ward, Phu Quoc City, Kien Giang, Vietnam',
+    pos:[205,420], checkin:'2026-11-11', checkout:'2026-11-13', nights:2,
+    cost:750426, payer:'경은', ref:'아고다 예약 1781465594' },
+];
+const hotelById = Object.fromEntries(HOTELS.map(h=>[h.id,h]));
+
+const ITINERARY = [
+  {day:1, date:'2026-10-27', weekday:'화', title:'출국 · 중부 체크인', hotel:'sonasea'},
+  {day:2, date:'2026-10-28', weekday:'수', title:'킹콩마트 쇼핑 · 딘꺼우 사원에서 일몰 · 즈엉동 야시장', hotel:'sonasea'},
+  {day:3, date:'2026-10-29', weekday:'목', title:'수오이짠 폭포 (체력 되면 함닌 어촌마을) · 저녁 가족 마사지', hotel:'sonasea'},
+  {day:4, date:'2026-10-30', weekday:'금', title:'중부 예비일', hotel:'sonasea'},
+  {day:5, date:'2026-10-31', weekday:'토', title:'북부 이동 · 그랜드월드', hotel:'windy'},
+  {day:6, date:'2026-11-01', weekday:'일', title:'예배', hotel:'windy'},
+  {day:7, date:'2026-11-02', weekday:'월', title:'빈원더스 – 놀이공원 · 아쿠아리움', hotel:'windy'},
+  {day:8, date:'2026-11-03', weekday:'화', title:'빈원더스 – 워터파크', hotel:'windy'},
+  {day:9, date:'2026-11-04', weekday:'수', title:'북부 예비일', hotel:'windy'},
+  {day:10, date:'2026-11-05', weekday:'목', title:'빈펄사파리', hotel:'windy'},
+  {day:11, date:'2026-11-06', weekday:'금', title:'라익벰 수상가옥 마을', hotel:'windy'},
+  {day:12, date:'2026-11-07', weekday:'토', title:'남부 이동 · 선셋타운', hotel:'novus'},
+  {day:13, date:'2026-11-08', weekday:'일', title:'예배', hotel:'novus'},
+  {day:14, date:'2026-11-09', weekday:'월', title:'혼똔 케이블카 & 썬월드 아쿠아토피아 워터파크', hotel:'novus'},
+  {day:15, date:'2026-11-10', weekday:'화', title:'남부 예비일', hotel:'novus'},
+  {day:16, date:'2026-11-11', weekday:'수', title:'프라이빗 비치', hotel:'premier'},
+  {day:17, date:'2026-11-12', weekday:'목', title:'리조트에서 여유롭게', hotel:'premier'},
+  {day:18, date:'2026-11-13', weekday:'금', title:'체크아웃 · 귀국', hotel:null},
+];
+
+// pos = [x,y] on the 320x460 schematic viewBox (approximate relative placement, not literal GPS)
+const ATTRACTIONS = [
+  {name:'킹콩마트', en:'King Kong Mart', day:2, region:'중부', pos:[58,268]},
+  {name:'딘꺼우 사원', en:'Dinh Cau Temple', day:2, region:'중부', pos:[40,248]},
+  {name:'즈엉동 야시장', en:'Dinh Cau Night Market', day:2, region:'중부', pos:[50,258]},
+  {name:'수오이짠 폭포', en:'Suoi Tranh Waterfall', day:3, region:'중부', pos:[96,262]},
+  {name:'함닌 어촌마을', en:'Ham Ninh Fishing Village', day:3, region:'중부', pos:[160,250]},
+  {name:'그랜드월드', en:'Grand World Phu Quoc', day:5, region:'북부', pos:[36,96]},
+  {name:'빈원더스', en:'VinWonders Phu Quoc', day:7, region:'북부', pos:[40,48]},
+  {name:'빈펄사파리', en:'Vinpearl Safari', day:10, region:'북부', pos:[62,62]},
+  {name:'라익벰 수상가옥 마을', en:'Rach Vem Floating Village', day:11, region:'북부', pos:[112,34]},
+  {name:'선셋타운', en:'Sunset Town', day:12, region:'남부', pos:[146,370]},
+  {name:'혼똔 케이블카', en:'Hon Thom Cable Car', day:14, region:'남부', pos:[176,404]},
+  {name:'썬월드 아쿠아토피아', en:'Sun World Hon Thom', day:14, region:'남부', pos:[192,440]},
+];
+
+const PAYERS = ['경은','세민','현지 지불(공동)','기타'];
+const CATEGORIES = ['숙소','항공','식비','엔터테인먼트','팁','교통','생필품','기념품','기타'];
+// 아직 지출이 없는 카테고리에 적용할 기본 예산(전체 여행 기준) — 지출이 생기면 그 금액이 바로 예산이 됨(100%)
+const CATEGORY_BUDGET_DEFAULT = { '식비':550000, '엔터테인먼트':650000, '팁':100000, '교통':250000, '생필품':100000, '기념품':200000 };
+
+// 일자별 변동비 예상 (식비·입장권·교통·마사지·팁·쇼핑 등 — 숙소/항공은 고정비로 별도 집계)
+const BUDGET_PLAN = [
+  { date:'2026-10-27', amount: 30000,  note:'이동일 · 라운지·간식 소소한 지출' },
+  { date:'2026-10-28', amount: 80000,  note:'킹콩마트 장보기 · 야시장 식사' },
+  { date:'2026-10-29', amount: 150000, note:'수오이짠 입장료 · 함닌 이동 · 가족 마사지' },
+  { date:'2026-10-30', amount: 50000,  note:'예비일 · 식비 위주' },
+  { date:'2026-10-31', amount: 120000, note:'북부 이동 · 그랜드월드 저녁식사·분수쇼' },
+  { date:'2026-11-01', amount: 50000,  note:'예배일 · 식비 위주' },
+  { date:'2026-11-02', amount: 150000, note:'빈원더스 입장권(성인 2명만 — 우리·누리 100cm 미만 무료) · 식비' },
+  { date:'2026-11-03', amount: 150000, note:'빈원더스 워터파크 입장권(성인 2명, 아이들 무료) · 식비' },
+  { date:'2026-11-04', amount: 50000,  note:'예비일 · 식비 위주' },
+  { date:'2026-11-05', amount: 150000, note:'빈펄사파리 입장권(성인 2명, 아이들 무료) · 식비' },
+  { date:'2026-11-06', amount: 80000,  note:'라익벰 이동·수상 레스토랑 점심' },
+  { date:'2026-11-07', amount: 150000, note:'남부 이동 · 선셋타운 버기투어·야시장·저녁' },
+  { date:'2026-11-08', amount: 50000,  note:'예배일 · 식비 위주' },
+  { date:'2026-11-09', amount: 130000, note:'혼똔 케이블카+아쿠아토피아 입장권(성인 2명 — 100cm 미만 무료) · 점심' },
+  { date:'2026-11-10', amount: 50000,  note:'예비일 · 식비 위주' },
+  { date:'2026-11-11', amount: 70000,  note:'남부 내 이동 · 리조트 식사' },
+  { date:'2026-11-12', amount: 120000, note:'리조트 휴식 · 스파(선택) · 마지막 밤 저녁' },
+  { date:'2026-11-13', amount: 60000,  note:'체크아웃·공항 이동 · 점심/간식' },
+];
+
+/* ---------------------------------------------------------------
+   HELPERS
+--------------------------------------------------------------- */
+const won = n => '₩' + Math.round(n).toLocaleString('ko-KR');
+const wonShort = n => { n = Math.round(n||0); return (n % 10000 === 0 && n>0) ? (n/10000)+'만원' : won(n); };
+const planByDate = {}; BUDGET_PLAN.forEach(p=> planByDate[p.date]=p);
+const mapsLink = (q) => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q + ' Phu Quoc Vietnam');
+function regionColor(r){ return r==='북부' ? 'var(--north)' : r==='남부' ? 'var(--south)' : 'var(--teal)'; }
+
+function todayISO(){
+  try{ return new Date().toISOString().slice(0,10); }catch(e){ return TODAY_ISO; }
+}
+function ddayText(){
+  const start = new Date('2026-10-27T00:00:00+07:00');
+  const end = new Date('2026-11-13T00:00:00+07:00');
+  const now = new Date();
+  const d1 = Math.ceil((start - now) / 86400000);
+  if (d1 > 0) return 'D-' + d1;
+  const d2 = Math.ceil((end - now) / 86400000);
+  if (d2 >= 0) return '여행 중 · 귀국까지 D-' + d2;
+  return '여행 완료';
+}
+
+/* ---------------------------------------------------------------
+   TAB NAV
+--------------------------------------------------------------- */
+const TOKENS = ['it','map','budget','info'];
+function showTab(tok){
+  if(!TOKENS.includes(tok)) tok = 'it';
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  document.getElementById('pane-'+tok).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b=>b.setAttribute('aria-current', String(b.dataset.tab===tok)));
+  const fabEl = document.getElementById('fabAdd'); if(fabEl) fabEl.hidden = (tok !== 'budget');
+  location.hash = tok;
+}
+document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click', ()=>showTab(b.dataset.tab)));
+window.addEventListener('hashchange', ()=>showTab(location.hash.slice(1)));
+
+/* ---------------------------------------------------------------
+   RENDER: 일정
+--------------------------------------------------------------- */
+function renderItinerary(){
+  const today = todayISO();
+  const el = document.getElementById('itList');
+  el.innerHTML = ITINERARY.map(d=>{
+    const h = d.hotel ? hotelById[d.hotel] : null;
+    const isToday = d.date === today;
+    const plan = planByDate[d.date];
+    return `<div class="card day-card ${isToday?'today open':''}" data-date="${d.date}">
+      <div class="day-head" data-toggle="${d.date}" role="button" tabindex="0" aria-expanded="${isToday}">
+        <div class="daynum">${d.day}</div>
+        <div class="dinfo">
+          <div class="dhead">${d.date.slice(5).replace('-','.')} (${d.weekday}) <span class="muted">Day ${d.day}${isToday?' · 오늘':''}</span></div>
+          <div class="dsummary">${d.title}</div>
+        </div>
+        ${plan ? `<span class="pill budget-pill">${wonShort(plan.amount)}</span>` : ''}
+        <span class="pill actual-pill" id="actual-pill-${d.date}" hidden></span>
+        <span class="pill region-${h?h.region:'중부'} region-pill" style="visibility:${h?'visible':'hidden'}">${h?h.region:'중부'}</span>
+        <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="day-body" id="body-${d.date}" ${isToday?'':'hidden'}>
+        <div class="dtitle">${d.title}</div>
+        ${h ? `<div class="hotel-tag">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3.5 21V7.5a1 1 0 0 1 1-1H14a1 1 0 0 1 1 1V21M3.5 21h17M14 21v-5.5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1V21M3.5 10.5h7.5M7 7.5V4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          ${h.name}</div>` : ''}
+        ${plan ? `<div class="budget-line">예상 예산 <b class="tnum">${won(plan.amount)}</b> · ${esc(plan.note||'')}</div>` : ''}
+        <div class="budget-line actual-line" id="actual-line-${d.date}" hidden></div>
+        <div class="note-label">세부 일정</div>
+        <div class="timeline" id="tl-${d.date}"></div>
+        ${STATIC_MODE ? '' : `<button class="btn ghost sm tl-add" data-adddate="${d.date}">+ 일정 추가</button>`}
+      </div>
+    </div>`;
+  }).join('');
+
+  function toggleDay(date){
+    const card = el.querySelector(`.day-card[data-date="${date}"]`);
+    const body = document.getElementById('body-'+date);
+    const head = card.querySelector('.day-head');
+    const nowHidden = !body.hidden;
+    body.hidden = nowHidden;
+    card.classList.toggle('open', !nowHidden);
+    head.setAttribute('aria-expanded', String(!nowHidden));
+  }
+  el.querySelectorAll('.day-head').forEach(head=>{
+    head.addEventListener('click', ()=> toggleDay(head.dataset.toggle));
+    head.addEventListener('keydown', e=>{
+      if(e.key==='Enter' || e.key===' '){ e.preventDefault(); toggleDay(head.dataset.toggle); }
+    });
+  });
+  el.querySelectorAll('[data-adddate]').forEach(btn=>{
+    btn.addEventListener('click', ()=> openItemSheet(btn.dataset.adddate, null));
+  });
+  ITINERARY.forEach(d=> renderTimeline(d.date));
+}
+
+/* ---------------------------------------------------------------
+   세부 일정 타임라인 (마일스톤)
+--------------------------------------------------------------- */
+let notesData = {}; // date -> {items, updatedAt} | null (not loaded)
+
+function itemsFor(date){
+  const rec = notesData[date];
+  if(rec === undefined) return null;
+  if(!rec) return [];
+  if(Array.isArray(rec.items)) return rec.items;
+  if(rec.memo) return [{id:'legacy', time:'', type:'기타', title:'메모', desc: rec.memo}];
+  return [];
+}
+
+const TYPE_META = {
+  '이동': {color:'var(--teal)',   icon:'<path d="M3 13l1.2-5A2 2 0 0 1 6.1 6.5h11.8A2 2 0 0 1 19.8 8l1.2 5M3 13v5a1 1 0 0 0 1 1h1.5a1 1 0 0 0 1-1v-1h11v1a1 1 0 0 0 1 1H20a1 1 0 0 0 1-1v-5M3 13h18M6.5 16.5h.01M17.5 16.5h.01" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>'},
+  '식사': {color:'var(--north)',  icon:'<path d="M7 3v7a2 2 0 0 0 4 0V3M9 10v11M17 3c-1.4 0-2.3 1.6-2.3 4.2S15.6 11.4 17 11.4V21" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>'},
+  '관광': {color:'var(--accent)', icon:'<path d="M12 21s6.2-5.5 6.2-10.2A6.2 6.2 0 0 0 5.8 10.8C5.8 15.5 12 21 12 21Z" stroke="currentColor" stroke-width="1.7" fill="none"/><circle cx="12" cy="10" r="2" stroke="currentColor" stroke-width="1.7" fill="none"/>'},
+  '숙박': {color:'var(--south)',  icon:'<path d="M3.5 21V7.5a1 1 0 0 1 1-1H14a1 1 0 0 1 1 1V21M3.5 21h17M14 21v-5.5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1V21M3.5 10.5h7.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" fill="none"/>'},
+  '기타': {color:'var(--muted)',  icon:'<circle cx="12" cy="12" r="4" fill="currentColor"/>'},
+};
+const TYPE_LIST = Object.keys(TYPE_META);
+const FLAG_KR = '<svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="18" fill="#fff"/><path d="M18 1 A17 17 0 0 1 18 35 A8.5 8.5 0 0 1 18 18 A8.5 8.5 0 0 0 18 1 Z" fill="#C60C30"/><path d="M18 35 A17 17 0 0 1 18 1 A8.5 8.5 0 0 1 18 18 A8.5 8.5 0 0 0 18 35 Z" fill="#003478"/></svg>';
+const FLAG_VN = '<svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="18" fill="#DA251D"/><polygon points="18,8 20.35,14.76 27.51,14.91 21.80,19.24 23.88,26.09 18,22 12.12,26.09 14.20,19.24 8.49,14.91 15.65,14.76" fill="#FFCD00"/></svg>';
+const TZ_META = { KST:{svg:FLAG_KR, emoji:'🇰🇷', cls:'kst'}, ICT:{svg:FLAG_VN, emoji:'🇻🇳', cls:'ict'} };
+
+function renderTimeline(date){
+  const el = document.getElementById('tl-'+date);
+  if(!el) return;
+  const items = itemsFor(date);
+  if(items === null){ el.innerHTML = '<p class="tl-empty">불러오는 중…</p>'; return; }
+  if(!items.length){ el.innerHTML = '<p class="tl-empty">아직 등록된 세부 일정이 없어요. 아래 버튼으로 추가해보세요.</p>'; return; }
+  el.innerHTML = items.map(it=>{
+    const meta = TYPE_META[it.type] || TYPE_META['기타'];
+    return `<div class="tl-item" data-id="${esc(it.id)}" tabindex="0" role="button" aria-label="${esc(it.title||'')} 수정">
+      <div class="tl-dot" style="color:${meta.color}"><svg width="11" height="11" viewBox="0 0 24 24">${meta.icon}</svg></div>
+      ${it.time ? `<div class="tl-time">${esc(it.time)}${it.tz && TZ_META[it.tz] ? `<span class="tl-tz ${TZ_META[it.tz].cls}"><span class="tz-emoji">${TZ_META[it.tz].emoji}</span><span class="tz-svg">${TZ_META[it.tz].svg}</span></span>` : ''}</div>` : ''}
+      <div class="tl-title">${esc(it.title||'')}</div>
+      ${it.desc ? `<div class="tl-desc">${esc(it.desc)}</div>` : ''}
+    </div>`;
+  }).join('');
+  if(STATIC_MODE){
+    el.querySelectorAll('.tl-item').forEach(node=>{ node.removeAttribute('tabindex'); node.removeAttribute('role'); node.removeAttribute('aria-label'); node.style.cursor='default'; });
+    return;
+  }
+  el.querySelectorAll('.tl-item').forEach(node=>{
+    const open = ()=> openItemSheet(date, items.find(i=>i.id===node.dataset.id));
+    node.addEventListener('click', open);
+    node.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); open(); } });
+  });
+}
+
+function openItemSheet(date, item){
+  const isNew = !item;
+  const backdrop = document.createElement('div'); backdrop.className = 'sheet-backdrop';
+  const sheet = document.createElement('div'); sheet.className = 'sheet';
+  sheet.innerHTML = `
+    <button class="sheet-close" aria-label="닫기">&times;</button>
+    <h3>${isNew?'일정 추가':'일정 수정'}</h3>
+    <div class="grid2">
+      <div class="field"><label>시간 (선택)</label><input id="itTime" placeholder="예: 09:00" value="${item?esc(item.time||''):''}"></div>
+      <div class="field"><label>시간대</label><select id="itTz">
+        <option value="ICT" ${(!item || item.tz!=='KST')?'selected':''}>🇻🇳 현지시간</option>
+        <option value="KST" ${item&&item.tz==='KST'?'selected':''}>🇰🇷 한국시간</option>
+      </select></div>
+    </div>
+    <div class="field"><label>유형</label><select id="itType">${TYPE_LIST.map(t=>`<option ${item&&item.type===t?'selected':''}>${t}</option>`).join('')}</select></div>
+    <div class="field"><label>제목</label><input id="itTitle" placeholder="예: 즈엉동 야시장" value="${item?esc(item.title||''):''}"></div>
+    <div class="field"><label>메모 (선택)</label><textarea id="itDesc" placeholder="예약 시간, 준비물, 세부 내용 등">${item?esc(item.desc||''):''}</textarea></div>
+    <div class="row" style="gap:8px">
+      <button class="btn primary" id="itSave" style="flex:1">저장</button>
+      ${!isNew?'<button class="btn ghost" id="itDel">삭제</button>':''}
+    </div>
+  `;
+  document.body.append(backdrop, sheet);
+  const close = ()=>{ backdrop.remove(); sheet.remove(); };
+  backdrop.addEventListener('click', close);
+  sheet.querySelector('.sheet-close').addEventListener('click', close);
+  sheet.querySelector('#itSave').addEventListener('click', async ()=>{
+    const title = sheet.querySelector('#itTitle').value.trim();
+    if(!title){ sheet.querySelector('#itTitle').focus(); return; }
+    const newItem = {
+      id: item ? item.id : (window.crypto && crypto.randomUUID ? crypto.randomUUID() : 'i'+Date.now()+Math.random().toString(36).slice(2)),
+      time: sheet.querySelector('#itTime').value.trim(),
+      tz: sheet.querySelector('#itTz').value,
+      type: sheet.querySelector('#itType').value,
+      title,
+      desc: sheet.querySelector('#itDesc').value.trim(),
+    };
+    let items = (itemsFor(date) || []).slice();
+    items = isNew ? [...items, newItem] : items.map(i=> i.id===newItem.id ? newItem : i);
+    items.sort((a,b)=> (a.time||'99:99').localeCompare(b.time||'99:99'));
+    close();
+    await persistItems(date, items);
+  });
+  if(!isNew){
+    sheet.querySelector('#itDel').addEventListener('click', async ()=>{
+      const items = (itemsFor(date)||[]).filter(i=>i.id!==item.id);
+      close();
+      await persistItems(date, items);
+    });
+  }
+}
+
+async function persistItems(date, items){
+  notesData[date] = { items, updatedAt: Date.now() };
+  renderTimeline(date);
+  if(!db) return;
+  try{ await db.doc('notes/'+date.replace(/-/g,'')).set({ date, items, updatedAt: Date.now() }); }
+  catch(e){}
+}
+
+/* ---------------------------------------------------------------
+   RENDER: 지도 — custom Google My Maps link
+--------------------------------------------------------------- */
+let customMapUrl = '';
+function renderCustomMapCard(editing){
+  const el = document.getElementById('customMapCard');
+  if(customMapUrl && !editing){
+    el.innerHTML = `
+      <a class="btn primary" href="${esc(customMapUrl)}" target="_blank" rel="noopener" style="width:100%; margin-bottom:8px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21Z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="9.5" r="2.4" stroke="currentColor" stroke-width="1.8"/></svg>
+        Google 지도에서 확대·축소하며 보기
+      </a>
+      <button class="btn ghost sm ${""}" id="editMapUrl" style="width:100%">지도 링크 바꾸기</button>`;
+    document.getElementById('editMapUrl').addEventListener('click', ()=>renderCustomMapCard(true));
+  }else{
+    el.innerHTML = `
+      <label>내 Google 지도(My Maps) 링크</label>
+      <p class="muted" style="font-size:12px; margin:-4px 0 10px">아래 CSV 파일을 Google 지도 → 내 지도에서 가져오기 하면 확대·축소되는 지도가 만들어져요. 완성되면 공유 링크를 여기 붙여넣으세요.</p>
+      <div class="row" style="gap:8px">
+        <input id="mapUrlInput" placeholder="https://www.google.com/maps/d/..." value="${customMapUrl?esc(customMapUrl):''}">
+        <button class="btn primary sm" id="saveMapUrl">저장</button>
+      </div>`;
+    document.getElementById('saveMapUrl').addEventListener('click', async ()=>{
+      const v = document.getElementById('mapUrlInput').value.trim();
+      customMapUrl = v;
+      renderCustomMapCard(false);
+      if(db){ try{ await db.doc('meta/mapUrl').set({url:v, updatedAt:Date.now()}); }catch(e){} }
+    });
+  }
+}
+
+let mapFilter = '전체';
+function renderMapFilters(){
+  const el = document.getElementById('mapFilters');
+  const opts = ['전체','숙소','북부','중부','남부'];
+  el.innerHTML = opts.map(o=>`<button class="chip" data-f="${o}" aria-pressed="${o===mapFilter}">${o}</button>`).join('');
+  el.querySelectorAll('.chip').forEach(c=>c.addEventListener('click', ()=>{ mapFilter = c.dataset.f; renderMapFilters(); renderMap(); }));
+}
+
+function renderMap(){
+  const svg = document.getElementById('islandSvg');
+  const showHotels = mapFilter==='전체' || mapFilter==='숙소';
+  const regionOk = r => mapFilter==='전체' || mapFilter==='숙소' || mapFilter===r;
+
+  let bands = `
+    <path d="M70 10 C 20 40, 10 120, 40 190 C 60 230, 110 250, 150 300 C 190 350, 180 420, 215 450 C 240 455, 260 420, 240 380 C 220 330, 170 300, 150 250 C 120 190, 60 150, 60 90 C 60 55, 80 30, 110 15 Z"
+      fill="color-mix(in srgb, var(--teal) 7%, transparent)" stroke="var(--line)" stroke-width="1.5"/>
+    <text x="30" y="40" class="pin-label" font-size="11" fill="var(--north)">북부</text>
+    <text x="110" y="220" class="pin-label" font-size="11" fill="var(--teal)">중부</text>
+    <text x="205" y="340" class="pin-label" font-size="11" fill="var(--south)">남부</text>
+  `;
+
+  let pins = '';
+  if(showHotels){
+    HOTELS.forEach(h=>{
+      pins += pinSvg(h.pos, regionColor(h.region), h.name, true, 'hotel-'+h.id);
+    });
+  }
+  ATTRACTIONS.forEach(a=>{
+    if(!regionOk(a.region)) return;
+    pins += pinSvg(a.pos, regionColor(a.region), a.name, false, 'attr-'+a.en.replace(/\s+/g,'_'));
+  });
+
+  svg.innerHTML = bands + pins;
+  svg.querySelectorAll('.pin').forEach(p=>{
+    p.addEventListener('click', ()=>{
+      const name = p.getAttribute('data-name');
+      window.open(mapsLink(name), '_blank', 'noopener');
+    });
+  });
+}
+function pinSvg([x,y], color, name, isHotel, key){
+  const r = isHotel ? 6 : 4.2;
+  return `<g class="pin" tabindex="0" role="button" aria-label="${name} 길찾기" data-name="${name}" transform="translate(${x} ${y})">
+    <circle class="halo" r="${r+10}" fill="${color}"/>
+    <circle r="${r}" fill="${color}" stroke="var(--surface)" stroke-width="2"/>
+    ${isHotel ? `<path d="M-2.2 1.3 L0 -2.3 L2.2 1.3 Z" fill="var(--surface)" transform="scale(0.9)"/>` : ''}
+  </g>`;
+}
+
+function renderPlaceList(){
+  const el = document.getElementById('placeList');
+  const regionOk = r => mapFilter==='전체' || mapFilter==='숙소' || mapFilter===r;
+  let rows = '';
+  if(mapFilter==='전체' || mapFilter==='숙소'){
+    HOTELS.forEach(h=>{
+      rows += `<div class="place-item row between">
+        <div><div class="place-name">🏨 ${h.name}</div><div class="place-sub">${h.region} · ${h.checkin.slice(5)} – ${h.checkout.slice(5)}</div></div>
+        <a class="btn sm ghost" href="${mapsLink(h.en)}" target="_blank" rel="noopener">길찾기</a>
+      </div>`;
+    });
+  }
+  ATTRACTIONS.filter(a=>regionOk(a.region)).forEach(a=>{
+    rows += `<div class="place-item row between">
+      <div><div class="place-name">${a.name}</div><div class="place-sub">${a.region} · Day ${a.day}</div></div>
+      <a class="btn sm ghost" href="${mapsLink(a.en)}" target="_blank" rel="noopener">길찾기</a>
+    </div>`;
+  });
+  el.innerHTML = rows || '<p class="empty">표시할 장소가 없어요.</p>';
+}
+
+/* ---------------------------------------------------------------
+   RENDER: 정보 (항공권 / 숙소)
+--------------------------------------------------------------- */
+function renderHotels(){
+  const el = document.getElementById('hotelList');
+  el.innerHTML = HOTELS.map(h=>`
+    <div class="card info-card">
+      <div class="ic-head">
+        <div>
+          <span class="pill region-${h.region}">${h.region}</span>
+          <h3 style="margin-top:7px">${h.name}</h3>
+          <div class="nights">${h.checkin.slice(5).replace('-','.')} – ${h.checkout.slice(5).replace('-','.')} · ${h.nights}박</div>
+        </div>
+      </div>
+      <div class="row" style="margin-top:10px; gap:8px">
+        <a class="btn sm ghost" href="${mapsLink(h.en)}" target="_blank" rel="noopener">지도에서 보기</a>
+      </div>
+      <div class="cost-row">
+        <span class="muted">결제: ${h.payer}</span>
+        <b class="tnum">${won(h.cost)}</b>
+      </div>
+      <div class="booking-ref">${h.ref}</div>
+    </div>
+  `).join('');
+}
+
+const FLIGHT_DEFAULT = {
+  airline:'Sun PhuQuoc Airways', pnr:'83Q5PW', paid:true,
+  outbound:{flightNo:'9G451', date:'2026-10-27', dep:'인천(ICN) T1', depTime:'11:40', arr:'푸꾸옥(PQC)', arrTime:'15:40', dur:'6시간'},
+  inbound:{flightNo:'9G454', date:'2026-11-13', dep:'푸꾸옥(PQC)', depTime:'20:35', arr:'인천(ICN) T1', arrTime:'03:50 (+1일, 11/14 새벽)', dur:'5시간 15분'},
+  baggage:'1인 위탁수하물 1개',
+  passengers:[
+    {name:'김경은', type:'성인', fare:463700},
+    {name:'장세민', type:'성인', fare:463700},
+    {name:'장우리', type:'소아', fare:369900},
+    {name:'장누리', type:'유아', fare:29200},
+  ],
+  totalCost:1326500,
+  memo:''
+};
+let flightState = JSON.parse(JSON.stringify(FLIGHT_DEFAULT));
+
+function legRow(leg){
+  return `<div class="row between" style="margin-bottom:4px">
+      <div><div style="font-weight:700; font-size:14px">${leg.dep} → ${leg.arr}</div>
+      <div class="muted" style="font-size:12px">${leg.flightNo} · ${leg.date.slice(5).replace('-','.')} ${leg.depTime} 출발 → ${leg.arrTime} 도착 · ${leg.dur}</div></div>
+    </div>`;
+}
+function renderFlight(){
+  const el = document.getElementById('flightCard');
+  const f = flightState;
+  el.innerHTML = `
+    <div class="flight-row">
+      <div class="flight-badge">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M10.5 3 4 14l3.5-1 2-2.5L12 15l-2 5 2.5-1 1.5-4.5 2-2.5-1-4L21 10l1-3-5 .5L13 3l-1 4-1.5-4Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+      </div>
+      <div>
+        <div style="font-weight:700; font-size:14.5px">${f.airline}</div>
+        <div class="muted" style="font-size:12px">예약번호 ${f.pnr} · ${f.paid?'결제 완료':'결제 전'}</div>
+      </div>
+    </div>
+    <hr class="line">
+    <div style="font-size:11.5px; font-weight:700; color:var(--muted); margin-bottom:6px">가는 편 · Day 1</div>
+    ${legRow(f.outbound)}
+    <hr class="line">
+    <div style="font-size:11.5px; font-weight:700; color:var(--muted); margin-bottom:6px">오는 편 · Day 18</div>
+    ${legRow(f.inbound)}
+    <hr class="line">
+    <div style="font-size:11.5px; font-weight:700; color:var(--muted); margin-bottom:8px">탑승객 / 운임</div>
+    ${f.passengers.map(p=>`<div class="row between" style="font-size:13px; padding:4px 0">
+        <span>${p.name} <span class="muted" style="font-size:11.5px">(${p.type})</span></span>
+        <span class="tnum">${won(p.fare)}</span>
+      </div>`).join('')}
+    <div class="cost-row"><span class="muted">왕복 항공권 총액</span><b class="tnum">${won(f.totalCost)}</b></div>
+    <div class="booking-ref">수하물: ${f.baggage} · 카드 결제 완료</div>
+    <hr class="line">
+    <div class="field"><label>메모</label><textarea id="fMemo" placeholder="체크인, 좌석, 유모차 위탁 등">${f.memo}</textarea></div>
+    <div class="save-row"><button class="btn primary sm" id="fSave">메모 저장</button></div>
+  `;
+  document.getElementById('fSave').addEventListener('click', saveFlight);
+  renderCategoryBreakdown();
+  renderBudgetPlan();
+}
+async function saveFlight(){
+  flightState.memo = document.getElementById('fMemo').value;
+  renderFlight();
+  if(db){
+    try{ await db.doc('meta/flight').set(flightState); }catch(e){}
+  }
+}
+
+/* ---------------------------------------------------------------
+   DB: expenses + notes + flight
+--------------------------------------------------------------- */
+let db = null, canWrite = null;
+let expenses = [];
+let notesLoaded = false;
+
+/* =================================================================
+   STATIC EXPORT MODE
+   이 파일은 Claude 아티팩트에서 보기 전용으로 내보낸 스냅샷입니다.
+   가족 지출·세부 일정·항공권·지도 링크는 아래에 고정 데이터로 들어있고,
+   입력/수정 기능은 모두 꺼져 있어요. 최신 수정은 Claude에서 계속됩니다.
+================================================================= */
+const STATIC_MODE = true;
+const STATIC_SNAPSHOT_AT = '2026-10-24';
+
+const STATIC_EXPENSES = [{"id": "seed-flight-adult", "amount": 927400, "category": "항공", "createdAt": 1761523610000, "item": "성인 항공권 (경은·세민 2명)", "memo": "예약번호 83Q5PW · 9G451/9G454", "payer": "경은"}, {"id": "seed-flight-noori", "amount": 29200, "category": "항공", "createdAt": 1761523630000, "item": "누리 항공권", "memo": "예약번호 83Q5PW · 9G451/9G454", "payer": "경은"}, {"id": "seed-flight-woori", "amount": 369900, "category": "항공", "createdAt": 1761523620000, "item": "우리 항공권", "memo": "예약번호 83Q5PW · 9G451/9G454", "payer": "경은"}, {"id": "seed-novus", "amount": 292028, "category": "숙소", "createdAt": 1761523400000, "item": "선셋타운 숙소 4박 - 노부스 솔 호텔", "memo": "트립닷컴 1400829517430894", "payer": "세민"}, {"id": "seed-premier", "amount": 750426, "category": "숙소", "createdAt": 1761523500000, "item": "남부 고급 숙소 2박 - 프리미어레지던스", "memo": "아고다 1781465594", "payer": "경은"}, {"id": "seed-sonasea", "amount": 635707, "category": "숙소", "createdAt": 1761523200000, "item": "중부 숙소 4박 - 베스트 웨스턴 프리미어 소나씨", "memo": "트립닷컴 1400829632476907", "payer": "세민"}, {"id": "seed-windy", "amount": 510000, "category": "숙소", "createdAt": 1761523300000, "item": "북부 숙소 7박 - Windy Hotel", "memo": "아고다 1781458427 · 현지 9,760,500동", "payer": "현지 지불(공동)"}];
+const STATIC_FLIGHT = {"airline": "Sun PhuQuoc Airways", "baggage": "1인 위탁수하물 1개", "inbound": {"arr": "인천(ICN) T1", "arrTime": "03:50 (+1일, 11/14 새벽)", "date": "2026-11-13", "dep": "푸꾸옥(PQC)", "depTime": "20:35", "dur": "5시간 15분", "flightNo": "9G454"}, "memo": "", "outbound": {"arr": "푸꾸옥(PQC)", "arrTime": "15:40", "date": "2026-10-27", "dep": "인천(ICN) T1", "depTime": "11:40", "dur": "6시간", "flightNo": "9G451"}, "paid": true, "passengers": [{"fare": 463700, "name": "김경은", "type": "성인"}, {"fare": 463700, "name": "장세민", "type": "성인"}, {"fare": 369900, "name": "장우리", "type": "소아"}, {"fare": 29200, "name": "장누리", "type": "유아"}], "pnr": "83Q5PW", "totalCost": 1326500};
+const STATIC_MAPURL = "https://www.google.com/maps/d/u/0/edit?mid=198BftITSAJzco1RM_ApcKz-PXd8sgVc&usp=sharing";
+const STATIC_NOTES = {"2026-10-27": {"date": "2026-10-27", "items": [{"desc": "번영로550번길 6", "id": "d1-1", "time": "06:30", "title": "집 출발", "type": "이동", "tz": "KST"}, {"desc": "교통상황 따라 변동, 당일 아침 실시간 내비 확인 권장", "id": "d1-2", "time": "07:45", "title": "인천공항 T1 도착", "type": "이동", "tz": "KST"}, {"desc": "Sun PhuQuoc Airways 카운터 오픈 추정 시간(항공사 확인 필요)", "id": "d1-3", "time": "08:40", "title": "체크인 · 수하물 · 출국심사", "type": "이동", "tz": "KST"}, {"desc": "T1 동편 4층, 11번 게이트 방향 에스컬레이터 · 약 2시간 이용", "id": "d1-4", "time": "08:50", "title": "마티나라운지 입장", "type": "기타", "tz": "KST"}, {"desc": "탑승마감 약 11:20", "id": "d1-5", "time": "10:55", "title": "탑승 시작", "type": "이동", "tz": "KST"}, {"desc": "", "id": "d1-6", "time": "11:40", "title": "ICN 출발 (9G451)", "type": "이동", "tz": "KST"}, {"desc": "베트남은 한국보다 2시간 느림", "id": "d1-7", "time": "15:40", "title": "PQC 도착", "type": "이동", "tz": "ICT"}, {"desc": "15~20분, 약 12만~18만동. 공항 밖 횡단보도 건너편 Grab 전용구역. 짐 많으니 7인승 호출", "id": "d1-8", "time": "16:10", "title": "공항 → 호텔 (Grab)", "type": "이동", "tz": "ICT"}, {"desc": "급한 소액은 프론트에서(환율 보통). 더 좋은 환율은 Day2 킹콩마트·즈엉동 야시장 입구 금은방에서", "id": "d1-9", "time": "16:30", "title": "호텔 체크인 · 환전", "type": "숙박", "tz": "ICT"}], "updatedAt": 1792649800000}, "2026-10-28": {"date": "2026-10-28", "items": [{"desc": "", "id": "d2-1", "time": "08:00", "title": "호텔 조식", "type": "식사", "tz": "ICT"}, {"desc": "그랩/택시 약 20~25분 (호텔→즈엉동 메인지점, 141A Tran Hung Dao)", "id": "d2-2", "time": "09:00", "title": "시터와 함께 킹콩마트로 출발", "type": "이동", "tz": "ICT"}, {"desc": "필요한 간식·용품 구매. 환율도 괜찮은 편이라 같이 환전해두면 편해요", "id": "d2-3", "time": "09:25", "title": "킹콩마트 장보기 · 환전", "type": "기타", "tz": "ICT"}, {"desc": "", "id": "d2-4", "time": "10:30", "title": "호텔로 복귀", "type": "이동", "tz": "ICT"}, {"desc": "오후 내내 호텔에서 재우고 휴식", "id": "d2-5", "time": "11:00", "title": "아이들 낮잠 · 가족 휴식", "type": "기타", "tz": "ICT"}, {"desc": "", "id": "d2-6", "time": "16:30", "title": "딘꺼우 사원으로 출발", "type": "이동", "tz": "ICT"}, {"desc": "사원 꼭대기에서 바다 전망. 관람은 30분이면 충분, 일몰 전 붐빈다리는 일찍 자리맡을것", "id": "d2-7", "time": "17:00", "title": "딘꺼우 사원 도착 · 일몰 명당 자리잡기", "type": "관광", "tz": "ICT"}, {"desc": "10/28 일몰 17:42, 서쪽 바다로 지는 해", "id": "d2-8", "time": "17:42", "title": "일몰 감상", "type": "관광", "tz": "ICT"}, {"desc": "해변 따라 약 10분", "id": "d2-9", "time": "18:00", "title": "즈엉동 야시장으로 도보 이동", "type": "이동", "tz": "ICT"}, {"desc": "22:30까지 운영. 현지음식, 기념품 구경", "id": "d2-10", "time": "18:15", "title": "즈엉동 야시장 저녁 · 구경", "type": "식사", "tz": "ICT"}, {"desc": "야시장 근처에서 Grab 호출", "id": "d2-11", "time": "20:30", "title": "호텔로 복귀", "type": "이동", "tz": "ICT"}], "updatedAt": 1792659054992}, "2026-10-29": {"date": "2026-10-29", "items": [{"desc": "", "id": "d3-1", "time": "08:30", "title": "조식", "type": "식사", "tz": "ICT"}, {"desc": "오전 선선할 때 이동 (더위 피하기)", "id": "d3-2", "time": "09:30", "title": "함닌 어촌마을로 출발", "type": "이동", "tz": "ICT"}, {"desc": "수상가옥·다리 산책. 왕복 이동시간 있으니 컨디션 보며 적당히", "id": "d3-3", "time": "10:00", "title": "함닌 어촌마을", "type": "관광", "tz": "ICT"}, {"desc": "점심 전 복귀", "id": "d3-4", "time": "11:30", "title": "호텔 방향으로 이동", "type": "이동", "tz": "ICT"}, {"desc": "", "id": "d3-5", "time": "12:00", "title": "점심", "type": "식사", "tz": "ICT"}, {"desc": "호텔에서 약 4km, 차로 10분 이내", "id": "d3-6", "time": "13:30", "title": "수오이짠 폭포로 출발", "type": "이동", "tz": "ICT"}, {"desc": "가장 더운 시간대라 물놀이하기 딱 좋음. 입구 쪽 개울에서 놀기 추천(안쪽 폭포까지는 왕복 2~3시간이라 아이들과는 비추천). 입장료 1인 3만동", "id": "d3-7", "time": "13:45", "title": "수오이짠 폭포 물놀이", "type": "관광", "tz": "ICT"}, {"desc": "", "id": "d3-8", "time": "15:30", "title": "호텔로 복귀 · 샤워", "type": "이동", "tz": "ICT"}, {"desc": "오전/오후로 나눠 다녀서 낮잠 없이도 괜찮을 듯, 아이들 상태 보며 조정", "id": "d3-9", "time": "16:30", "title": "휴식", "type": "기타", "tz": "ICT"}, {"desc": "호텔 스파 사전 예약 추천", "id": "d3-10", "time": "19:00", "title": "가족 마사지", "type": "기타", "tz": "ICT"}, {"desc": "", "id": "d3-11", "time": "20:30", "title": "저녁식사", "type": "식사", "tz": "ICT"}], "updatedAt": 1792700100000}, "2026-10-30": {"date": "2026-10-30", "items": [{"desc": "", "id": "d4-1", "time": "09:00", "title": "늦은 조식", "type": "식사", "tz": "ICT"}, {"desc": "", "id": "d4-2", "time": "10:30", "title": "수영장 · 자유시간", "type": "기타", "tz": "ICT"}, {"desc": "", "id": "d4-3", "time": "12:30", "title": "점심", "type": "식사", "tz": "ICT"}, {"desc": "", "id": "d4-4", "time": "14:00", "title": "낮잠 · 휴식", "type": "기타", "tz": "ICT"}, {"desc": "예비일 — 날씨·컨디션 따라 해변 산책이나 쇼핑 등 자유롭게", "id": "d4-5", "time": "16:00", "title": "자유일정", "type": "기타", "tz": "ICT"}, {"desc": "", "id": "d4-6", "time": "19:00", "title": "저녁식사", "type": "식사", "tz": "ICT"}], "updatedAt": 1792700000001}, "2026-10-31": {"date": "2026-10-31", "items": [{"desc": "", "id": "d5-1", "time": "09:00", "title": "중부 숙소 체크아웃", "type": "이동", "tz": "ICT"}, {"desc": "Windy Hotel까지 이동", "id": "d5-2", "time": "09:30", "title": "북부로 이동", "type": "이동", "tz": "ICT"}, {"desc": "얼리체크인 어려우면 짐만 맡기고 출발", "id": "d5-3", "time": "11:00", "title": "Windy Hotel 체크인", "type": "숙박", "tz": "ICT"}, {"desc": "", "id": "d5-4", "time": "12:00", "title": "점심", "type": "식사", "tz": "ICT"}, {"desc": "", "id": "d5-5", "time": "14:00", "title": "오후 휴식 · 수영장", "type": "기타", "tz": "ICT"}, {"desc": "", "id": "d5-6", "time": "17:30", "title": "그랜드월드로 출발", "type": "이동", "tz": "ICT"}, {"desc": "해질녘부터 상점·조명 살아남 (낮엔 대부분 휴점). 호이안 거리 산책", "id": "d5-7", "time": "18:00", "title": "그랜드월드 도착", "type": "관광", "tz": "ICT"}, {"desc": "그랜드월드 내 레스토랑", "id": "d5-8", "time": "19:30", "title": "저녁식사", "type": "식사", "tz": "ICT"}, {"desc": "중심 운하에서 약 30분간. 별도 좌석 없음, 식당·거리에서 관람", "id": "d5-9", "time": "21:30", "title": "분수쇼 관람", "type": "관광", "tz": "ICT"}, {"desc": "", "id": "d5-10", "time": "22:00", "title": "호텔로 복귀", "type": "이동", "tz": "ICT"}], "updatedAt": 1792700000002}, "2026-11-01": {"date": "2026-11-01", "items": [{"desc": "", "id": "d6-1", "time": "09:00", "title": "조식", "type": "식사", "tz": "ICT"}, {"desc": "", "id": "d6-2", "time": "10:00", "title": "예배", "type": "기타", "tz": "ICT"}, {"desc": "", "id": "d6-3", "time": "12:00", "title": "점심", "type": "식사", "tz": "ICT"}, {"desc": "", "id": "d6-4", "time": "14:00", "title": "자유시간 · 수영장", "type": "기타", "tz": "ICT"}, {"desc": "", "id": "d6-5", "time": "18:30", "title": "저녁식사", "type": "식사", "tz": "ICT"}], "updatedAt": 1792700000003}, "2026-11-02": {"date": "2026-11-02", "items": [{"desc": "", "id": "d7-1", "time": "08:30", "title": "조식", "type": "식사", "tz": "ICT"}, {"desc": "", "id": "d7-2", "time": "09:00", "title": "빈원더스로 출발", "type": "이동", "tz": "ICT"}, {"desc": "판타지월드 09:00~19:00. 그늘 적고 낮에 더우니 오전 위주 추천\n성인 1050000VND, 58000원", "id": "d7-3", "time": "09:30", "title": "빈원더스 입장", "type": "관광", "tz": "ICT"}, {"desc": "단지 내 레스토랑", "id": "d7-4", "time": "12:00", "title": "점심", "type": "식사", "tz": "ICT"}, {"desc": "운영시간 10:00~18:00", "id": "d7-5", "time": "13:30", "title": "아쿠아리움 관람", "type": "관광", "tz": "ICT"}, {"desc": "", "id": "d7-6", "time": "16:00", "title": "호텔로 복귀", "type": "이동", "tz": "ICT"}, {"desc": "", "id": "d7-7", "time": "18:00", "title": "저녁식사", "type": "식사", "tz": "ICT"}], "updatedAt": 1792793186755}, "2026-11-03": {"date": "2026-11-03", "items": [{"desc": "", "id": "d8-1", "time": "08:30", "title": "조식", "type": "식사", "tz": "ICT"}, {"desc": "정문 통과 후 바로 워터파크 구역", "id": "d8-2", "time": "09:30", "title": "빈원더스 워터파크로 출발", "type": "이동", "tz": "ICT"}, {"desc": "운영시간 10:00~18:00. 수영복·구명조끼 등 준비\n빈원더스와 요금 같음. 성인 1050000VND, 58000원\n락커 대여 약 5500원, 타월 대여 약 3000원", "id": "d8-3", "time": "10:00", "title": "워터파크 입장", "type": "관광", "tz": "ICT"}, {"desc": "단지 내", "id": "d8-4", "time": "12:00", "title": "점심", "type": "식사", "tz": "ICT"}, {"desc": "", "id": "d8-5", "time": "13:00", "title": "오후 워터파크", "type": "관광", "tz": "ICT"}, {"desc": "", "id": "d8-6", "time": "16:00", "title": "샤워 후 호텔 복귀", "type": "이동", "tz": "ICT"}, {"desc": "", "id": "d8-7", "time": "18:30", "title": "저녁식사", "type": "식사", "tz": "ICT"}], "updatedAt": 1792793306451}, "2026-11-04": {"date": "2026-11-04", "items": [{"desc": "", "id": "d9-1", "time": "09:00", "title": "늦은 조식", "type": "식사", "tz": "ICT"}, {"desc": "", "id": "d9-2", "time": "10:30", "title": "수영장 · 자유시간", "type": "기타", "tz": "ICT"}, {"desc": "", "id": "d9-3", "time": "12:30", "title": "점심", "type": "식사", "tz": "ICT"}, {"desc": "", "id": "d9-4", "time": "14:00", "title": "낮잠 · 휴식", "type": "기타", "tz": "ICT"}, {"desc": "예비일", "id": "d9-5", "time": "16:00", "title": "자유일정", "type": "기타", "tz": "ICT"}, {"desc": "", "id": "d9-6", "time": "19:00", "title": "저녁식사", "type": "식사", "tz": "ICT"}], "updatedAt": 1792700000006}, "2026-11-05": {"date": "2026-11-05", "items": [{"desc": "더위 피해 일찍 움직이기", "id": "d10-1", "time": "08:00", "title": "이른 조식", "type": "식사", "tz": "ICT"}, {"desc": "", "id": "d10-2", "time": "08:30", "title": "빈펄사파리로 출발", "type": "이동", "tz": "ICT"}, {"desc": "트램 교환, 파충류관·코끼리존 등 관람\n성인 950000VND, 52000원", "id": "d10-3", "time": "09:00", "title": "빈펄사파리 입장", "type": "관광", "tz": "ICT"}, {"desc": "약 30분, 기린 먹이주기 체험 가능", "id": "d10-4", "time": "11:00", "title": "사파리버스 투어", "type": "관광", "tz": "ICT"}, {"desc": "사파리 내 기린 레스토랑 등", "id": "d10-5", "time": "11:30", "title": "점심", "type": "식사", "tz": "ICT"}, {"desc": "", "id": "d10-6", "time": "13:00", "title": "호텔로 복귀", "type": "이동", "tz": "ICT"}, {"desc": "한낮 더위 피하기", "id": "d10-7", "time": "13:30", "title": "낮잠 · 휴식", "type": "기타", "tz": "ICT"}, {"desc": "", "id": "d10-8", "time": "18:00", "title": "저녁식사", "type": "식사", "tz": "ICT"}], "updatedAt": 1792793148662}, "2026-11-06": {"date": "2026-11-06", "items": [{"desc": "", "id": "d11-1", "time": "09:00", "title": "조식", "type": "식사", "tz": "ICT"}, {"desc": "차량 약 40~60분 예상 (간 다우 지역)", "id": "d11-2", "time": "10:00", "title": "라익벰으로 출발", "type": "이동", "tz": "ICT"}, {"desc": "수상가옥·다리 산책, 불가사리 관찰(손으로 만지지 말 것)", "id": "d11-3", "time": "11:00", "title": "라익벰 수상가옥 마을", "type": "관광", "tz": "ICT"}, {"desc": "해산물", "id": "d11-4", "time": "12:30", "title": "수상 레스토랑 점심", "type": "식사", "tz": "ICT"}, {"desc": "해지기 전 복귀 권장 (가로등 없는 구간)", "id": "d11-5", "time": "14:00", "title": "호텔로 복귀 출발", "type": "이동", "tz": "ICT"}, {"desc": "", "id": "d11-6", "time": "15:00", "title": "호텔 도착 · 휴식", "type": "기타", "tz": "ICT"}, {"desc": "", "id": "d11-7", "time": "18:30", "title": "저녁식사", "type": "식사", "tz": "ICT"}], "updatedAt": 1792700000008}, "2026-11-07": {"date": "2026-11-07", "items": [{"desc": "", "id": "d12-1", "time": "09:00", "title": "Windy Hotel 체크아웃", "type": "이동", "tz": "ICT"}, {"desc": "Novus Sol Hotel까지 약 45~60분 예상", "id": "d12-2", "time": "09:30", "title": "남부로 이동", "type": "이동", "tz": "ICT"}, {"desc": "", "id": "d12-3", "time": "11:00", "title": "Novus Sol Hotel 체크인", "type": "숙박", "tz": "ICT"}, {"desc": "", "id": "d12-4", "time": "12:00", "title": "점심", "type": "식사", "tz": "ICT"}, {"desc": "", "id": "d12-5", "time": "14:00", "title": "낮잠 · 휴식", "type": "기타", "tz": "ICT"}, {"desc": "", "id": "d12-6", "time": "16:00", "title": "선셋타운으로 출발", "type": "이동", "tz": "ICT"}, {"desc": "버기투어(선택, 6인승 약 30만동) 또는 산책", "id": "d12-7", "time": "16:30", "title": "선셋타운 도착", "type": "관광", "tz": "ICT"}, {"desc": "", "id": "d12-8", "time": "18:00", "title": "선셋타운 야시장", "type": "관광", "tz": "ICT"}, {"desc": "해안가 식당", "id": "d12-9", "time": "19:00", "title": "해산물 저녁식사", "type": "식사", "tz": "ICT"}, {"desc": "해 진 후 시작, 약 45분. 정확한 시간은 현지 확인 권장", "id": "d12-10", "time": "20:30", "title": "'Kiss of the Sea' 공연", "type": "관광", "tz": "ICT"}, {"desc": "", "id": "d12-11", "time": "21:30", "title": "호텔로 복귀", "type": "이동", "tz": "ICT"}], "updatedAt": 1792700000009}, "2026-11-08": {"date": "2026-11-08", "items": [{"desc": "", "id": "d13-1", "time": "09:00", "title": "조식", "type": "식사", "tz": "ICT"}, {"desc": "", "id": "d13-2", "time": "10:00", "title": "예배", "type": "기타", "tz": "ICT"}, {"desc": "", "id": "d13-3", "time": "12:00", "title": "점심", "type": "식사", "tz": "ICT"}, {"desc": "", "id": "d13-4", "time": "14:00", "title": "자유시간 · 수영장", "type": "기타", "tz": "ICT"}, {"desc": "", "id": "d13-5", "time": "18:30", "title": "저녁식사", "type": "식사", "tz": "ICT"}], "updatedAt": 1792700000010}, "2026-11-09": {"date": "2026-11-09", "items": [{"desc": "", "id": "d14-1", "time": "08:00", "title": "조식", "type": "식사", "tz": "ICT"}, {"desc": "안터이 지역, 숙소에서 비교적 가까움", "id": "d14-2", "time": "08:30", "title": "혼똔 케이블카 선착장으로 출발", "type": "이동", "tz": "ICT"}, {"desc": "세계 최장 3선 케이블카, 약 15분", "id": "d14-3", "time": "09:00", "title": "혼똔 케이블카 탑승", "type": "이동", "tz": "ICT"}, {"desc": "놀이기구 체험", "id": "d14-4", "time": "09:20", "title": "혼똔섬 도착 · 엑조티카 빌리지", "type": "관광", "tz": "ICT"}, {"desc": "망고 레스토랑 등, 60~90분 권장", "id": "d14-5", "time": "11:00", "title": "점심", "type": "식사", "tz": "ICT"}, {"desc": "", "id": "d14-6", "time": "13:00", "title": "아쿠아토피아 워터파크", "type": "관광", "tz": "ICT"}, {"desc": "", "id": "d14-7", "time": "16:30", "title": "바이 트라오 해변에서 휴식", "type": "기타", "tz": "ICT"}, {"desc": "", "id": "d14-8", "time": "17:30", "title": "케이블카로 복귀", "type": "이동", "tz": "ICT"}, {"desc": "", "id": "d14-9", "time": "18:30", "title": "저녁식사", "type": "식사", "tz": "ICT"}], "updatedAt": 1792700000011}, "2026-11-10": {"date": "2026-11-10", "items": [{"desc": "", "id": "d15-1", "time": "09:00", "title": "늦은 조식", "type": "식사", "tz": "ICT"}, {"desc": "", "id": "d15-2", "time": "10:30", "title": "수영장 · 자유시간", "type": "기타", "tz": "ICT"}, {"desc": "", "id": "d15-3", "time": "12:30", "title": "점심", "type": "식사", "tz": "ICT"}, {"desc": "", "id": "d15-4", "time": "14:00", "title": "낮잠 · 휴식", "type": "기타", "tz": "ICT"}, {"desc": "예비일", "id": "d15-5", "time": "16:00", "title": "자유일정", "type": "기타", "tz": "ICT"}, {"desc": "", "id": "d15-6", "time": "19:00", "title": "저녁식사", "type": "식사", "tz": "ICT"}], "updatedAt": 1792700000012}, "2026-11-11": {"date": "2026-11-11", "items": [{"desc": "", "id": "d16-1", "time": "09:00", "title": "Novus Sol 체크아웃", "type": "이동", "tz": "ICT"}, {"desc": "남부 내 이동, 약 15~20분 예상", "id": "d16-2", "time": "09:30", "title": "프리미어레지던스(켐비치)로 이동", "type": "이동", "tz": "ICT"}, {"desc": "", "id": "d16-3", "time": "10:00", "title": "프리미어레지던스 체크인", "type": "숙박", "tz": "ICT"}, {"desc": "리조트 내", "id": "d16-4", "time": "12:00", "title": "점심", "type": "식사", "tz": "ICT"}, {"desc": "물놀이 · 휴식", "id": "d16-5", "time": "13:30", "title": "프라이빗 비치(켐비치)", "type": "관광", "tz": "ICT"}, {"desc": "", "id": "d16-6", "time": "17:00", "title": "숙소 복귀 · 샤워", "type": "이동", "tz": "ICT"}, {"desc": "", "id": "d16-7", "time": "18:30", "title": "저녁식사", "type": "식사", "tz": "ICT"}], "updatedAt": 1792700000013}, "2026-11-12": {"date": "2026-11-12", "items": [{"desc": "", "id": "d17-1", "time": "09:00", "title": "늦은 조식", "type": "식사", "tz": "ICT"}, {"desc": "", "id": "d17-2", "time": "10:00", "title": "수영장 · 비치 자유시간", "type": "기타", "tz": "ICT"}, {"desc": "", "id": "d17-3", "time": "12:30", "title": "점심", "type": "식사", "tz": "ICT"}, {"desc": "", "id": "d17-4", "time": "14:00", "title": "낮잠 · 휴식", "type": "기타", "tz": "ICT"}, {"desc": "선택", "id": "d17-5", "time": "16:00", "title": "스파 · 액티비티", "type": "기타", "tz": "ICT"}, {"desc": "내일 체크아웃 대비", "id": "d17-6", "time": "18:00", "title": "짐 정리 시작", "type": "기타", "tz": "ICT"}, {"desc": "여행 마지막 밤", "id": "d17-7", "time": "19:00", "title": "저녁식사", "type": "식사", "tz": "ICT"}], "updatedAt": 1792700000014}, "2026-11-13": {"date": "2026-11-13", "items": [{"desc": "", "id": "d18-1", "time": "09:00", "title": "조식", "type": "식사", "tz": "ICT"}, {"desc": "", "id": "d18-2", "time": "10:00", "title": "마지막 비치 · 수영장 시간", "type": "관광", "tz": "ICT"}, {"desc": "레이트 체크아웃 가능 여부 문의, 짐은 프런트 보관 가능", "id": "d18-3", "time": "12:00", "title": "체크아웃", "type": "숙박", "tz": "ICT"}, {"desc": "", "id": "d18-4", "time": "12:30", "title": "점심", "type": "식사", "tz": "ICT"}, {"desc": "짐 보관 후 산책 · 쇼핑 또는 라운지", "id": "d18-5", "time": "13:00", "title": "자유시간", "type": "기타", "tz": "ICT"}, {"desc": "리조트 → 공항 약 20~25분", "id": "d18-6", "time": "17:30", "title": "공항으로 출발", "type": "이동", "tz": "ICT"}, {"desc": "체크인 · 수하물 · 출국심사, 국제선 통상 2.5~3시간 전 권장", "id": "d18-7", "time": "18:00", "title": "푸꾸옥공항 도착", "type": "이동", "tz": "ICT"}, {"desc": "", "id": "d18-8", "time": "20:35", "title": "PQC 출발 (9G454)", "type": "이동", "tz": "ICT"}, {"desc": "11/14 새벽, 한국시간 기준", "id": "d18-9", "time": "03:50", "title": "ICN 도착 (+1일)", "type": "이동", "tz": "KST"}], "updatedAt": 1792700000015}};
+
+async function initDb(){
+  if(STATIC_MODE){
+    expenses = STATIC_EXPENSES;
+    flightState = {...FLIGHT_DEFAULT, ...STATIC_FLIGHT};
+    customMapUrl = STATIC_MAPURL || '';
+    ITINERARY.forEach(d=>{ notesData[d.date] = STATIC_NOTES[d.date] || null; });
+    renderExpenses();
+    renderFlight();
+    renderCustomMapCard(false);
+    ITINERARY.forEach(d=> renderTimeline(d.date));
+    applyStaticMode();
+    return;
+  }
+  try{
+    db = await claude.use('db');
+  }catch(e){ db = null; }
+  if(!db){
+    document.getElementById('expenseList').innerHTML = '<p class="empty">이 화면에서는 정산 데이터를 불러올 수 없어요.</p>';
+    document.getElementById('settleBanner').textContent = '정산 데이터를 불러올 수 없어요.';
+    return;
+  }
+
+  db.collection('expenses').orderBy('createdAt','desc').onSnapshot(snap=>{
+    expenses = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    renderExpenses();
+  }, err=>{
+    document.getElementById('expenseList').innerHTML = '<p class="empty">지출 내역을 불러오지 못했어요.</p>';
+  });
+
+  db.doc('meta/flight').onSnapshot(snap=>{
+    if(snap.exists){ flightState = {...FLIGHT_DEFAULT, ...snap.data()}; renderFlight(); }
+  }, err=>{});
+
+  db.doc('meta/mapUrl').onSnapshot(snap=>{
+    customMapUrl = snap.exists ? (snap.data().url || '') : '';
+    renderCustomMapCard(false);
+  }, err=>{});
+
+  ITINERARY.forEach(d=>{
+    db.doc('notes/'+d.date.replace(/-/g,'')).onSnapshot(snap=>{
+      notesData[d.date] = snap.exists ? snap.data() : null;
+      renderTimeline(d.date);
+    }, err=>{});
+  });
+}
+
+function applyStaticMode(){
+  const fab = document.getElementById('fabAdd'); if(fab) fab.remove();
+  document.querySelectorAll('.expense-item .del').forEach(b=>b.remove());
+  const editBtn = document.getElementById('editMapUrl'); if(editBtn) editBtn.remove();
+  const fSave = document.getElementById('fSave'); if(fSave) fSave.remove();
+  const fMemo = document.getElementById('fMemo'); if(fMemo){ fMemo.setAttribute('readonly','readonly'); }
+  document.body.classList.add('static-mode');
+}
+
+function renderExpenses(){
+  const el = document.getElementById('expenseList');
+  document.getElementById('expenseCount').textContent = expenses.length ? expenses.length+'건' : '';
+  if(!expenses.length){
+    el.innerHTML = '<p class="empty">아직 등록된 지출이 없어요. 오른쪽 아래 + 버튼으로 추가해보세요.</p>';
+  }else{
+    el.innerHTML = expenses.map(e=>`
+      <div class="expense-item">
+        <div>
+          <div class="item-name">${esc(e.item||'')} <span class="cat-tag">${esc(e.category||'기타')}</span></div>
+          <div class="item-meta">${e.tripDate? (tripDateLabel(e.tripDate)+' · '):''}${esc(e.payer||'')}${e.memo? ' · '+esc(e.memo):''}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="item-amt tnum">${won(e.amount||0)}</div>
+          <button class="del" data-id="${e.id}">삭제</button>
+        </div>
+      </div>`).join('');
+    el.querySelectorAll('.del').forEach(b=>b.addEventListener('click', ()=>deleteExpense(b.dataset.id)));
+  }
+
+  const total = expenses.reduce((s,e)=>s+(Number(e.amount)||0),0);
+  document.getElementById('sumTotal').textContent = won(total);
+
+  const named = {};
+  expenses.forEach(e=>{
+    const p = e.payer;
+    if(p==='경은' || p==='세민'){ named[p] = (named[p]||0) + (Number(e.amount)||0); }
+  });
+  const byA = named['경은']||0, byB = named['세민']||0;
+  const pairTotal = byA + byB;
+  const perHead = pairTotal/2;
+  document.getElementById('sumPer').textContent = pairTotal ? won(perHead) : '–';
+
+  const diff = byA - byB;
+  const banner = document.getElementById('settleBanner');
+  if(pairTotal===0){
+    banner.innerHTML = '경은 · 세민 지출을 등록하면 자동으로 정산 금액을 계산해드려요.';
+  }else if(Math.abs(diff) < 1){
+    banner.innerHTML = `<b>정산 완료!</b><br>경은과 세민이 정확히 같은 금액을 부담했어요.`;
+  }else if(diff > 0){
+    banner.innerHTML = `<b>세민 → 경은</b><br>세민이 경은에게 <b class="tnum">${won(diff/2)}</b> 보내면 정산 끝.`;
+  }else{
+    banner.innerHTML = `<b>경은 → 세민</b><br>경은이 세민에게 <b class="tnum">${won(-diff/2)}</b> 보내면 정산 끝.`;
+  }
+  renderCategoryBreakdown();
+  renderDayActuals();
+}
+function esc(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function tripDateLabel(date){
+  const it = ITINERARY.find(i=>i.date===date);
+  return it ? `Day ${it.day} (${date.slice(5).replace('-','/')})` : date;
+}
+
+function renderDayActuals(){
+  const sums = {};
+  expenses.forEach(e=>{
+    if(!e.tripDate) return;
+    sums[e.tripDate] = (sums[e.tripDate]||0) + (Number(e.amount)||0);
+  });
+  ITINERARY.forEach(d=>{
+    const amt = sums[d.date]||0;
+    const pillEl = document.getElementById('actual-pill-'+d.date);
+    const lineEl = document.getElementById('actual-line-'+d.date);
+    if(pillEl){ pillEl.hidden = amt<=0; if(amt>0) pillEl.textContent = '실제 '+wonShort(amt); }
+    if(lineEl){ lineEl.hidden = amt<=0; if(amt>0) lineEl.innerHTML = `실제 사용 <b class="tnum">${won(amt)}</b>`; }
+  });
+}
+
+const CAT_COLOR = { '항공':'var(--accent)', '숙소':'var(--teal)', '식비':'var(--north)', '엔터테인먼트':'var(--south)', '팁':'#C9975F', '교통':'#6D8FB0', '생필품':'#5FA37A', '기념품':'#A47FC9', '기타':'var(--muted)' };
+
+function renderCategoryBreakdown(){
+  const el = document.getElementById('categoryBreakdown');
+  if(!el) return;
+  // 숙소·항공 비용은 이미 "지출 내역"에 실제 결제 내역으로 기록되어 있으므로,
+  // 여기서 별도로 더하면 중복 집계가 되니 expenses 합계만 사용한다.
+  const sums = {};
+  CATEGORIES.forEach(c=> sums[c]=0);
+  expenses.forEach(e=>{
+    const c = CATEGORIES.includes(e.category) ? e.category : '기타';
+    sums[c] += Number(e.amount)||0;
+  });
+  // 지출이 이미 있는 카테고리는 지출액 = 예산(100%), 아직 없는 카테고리는 기본 예산을 잡아 0%로 보여줌
+  const rows = CATEGORIES
+    .map(cat=>{
+      const spent = sums[cat]||0;
+      const budget = spent>0 ? spent : (CATEGORY_BUDGET_DEFAULT[cat]||0);
+      return { cat, spent, budget };
+    })
+    .filter(r=> r.budget>0)
+    .sort((a,b)=> b.spent-a.spent || b.budget-a.budget);
+  if(!rows.length){
+    el.innerHTML = '<p class="empty">아직 집계할 지출이 없어요.</p>';
+    return;
+  }
+  const spentTotal = rows.reduce((s,r)=>s+r.spent,0);
+  el.innerHTML = rows.map(r=>{
+    const pct = r.budget ? Math.min(100, r.spent/r.budget*100) : 0;
+    const color = CAT_COLOR[r.cat] || 'var(--muted)';
+    return `<div class="cat-row">
+      <div class="cat-top">
+        <span class="cat-name"><i class="dot" style="background:${color}"></i>${esc(r.cat)}${(r.cat==='숙소'||r.cat==='항공')?' <span class="muted" style="font-weight:400">(고정)</span>':''}</span>
+        <span class="cat-pct">${pct.toFixed(0)}% <span class="muted">· 예산 ${won(r.budget)}</span></span>
+      </div>
+      <div class="cat-bar-bg"><div class="cat-bar-fill" style="width:${pct}%; background:${color}"></div></div>
+      <div style="text-align:right; margin-top:4px" class="tnum" style="font-size:12.5px">${won(r.spent)}</div>
+    </div>`;
+  }).join('') + `<div class="cat-total-row"><span>총 지출</span><span class="tnum">${won(spentTotal)}</span></div>`;
+}
+
+function renderBudgetPlan(){
+  const hotelFixed = HOTELS.reduce((s,h)=>s+(Number(h.cost)||0),0);
+  const flightFixed = Number((flightState||FLIGHT_DEFAULT).totalCost)||0;
+  const variableTotal = BUDGET_PLAN.reduce((s,d)=>s+(Number(d.amount)||0),0);
+  const grand = hotelFixed + flightFixed + variableTotal;
+  const set = (id,val)=>{ const n = document.getElementById(id); if(n) n.textContent = won(val); };
+  set('planHotel', hotelFixed);
+  set('planFlight', flightFixed);
+  set('planVariable', variableTotal);
+  set('planGrand', grand);
+
+  const list = document.getElementById('planDayList');
+  if(!list) return;
+  list.innerHTML = BUDGET_PLAN.map(p=>{
+    const it = ITINERARY.find(i=>i.date===p.date);
+    const label = it ? `Day ${it.day} · ${it.title}` : p.date;
+    const dateShort = p.date.slice(5).replace('-','/');
+    return `<div class="plan-day-row">
+      <div class="pd-label"><span class="pd-date">${dateShort} (${it?it.weekday:''})</span>${esc(label)}<div class="muted" style="font-size:11px; margin-top:2px">${esc(p.note||'')}</div></div>
+      <div class="pd-amt tnum">${won(p.amount)}</div>
+    </div>`;
+  }).join('');
+}
+
+async function deleteExpense(id){
+  if(!db) return;
+  try{ await db.collection('expenses').doc(id).delete(); }catch(e){}
+}
+
+/* ---- add-expense sheet ---- */
+function openAddSheet(){
+  const backdrop = document.createElement('div');
+  backdrop.className = 'sheet-backdrop';
+  const sheet = document.createElement('div');
+  sheet.className = 'sheet';
+  sheet.innerHTML = `
+    <button class="sheet-close" aria-label="닫기">&times;</button>
+    <h3>지출 추가</h3>
+    <div class="field"><label>항목</label><input id="nItem" placeholder="예: 저녁 식사, 그랩 택시"></div>
+    <div class="grid2">
+      <div class="field"><label>금액 (원)</label><input id="nAmt" type="number" inputmode="numeric" placeholder="0"></div>
+      <div class="field"><label>분류</label><select id="nCat">${CATEGORIES.map(c=>`<option>${c}</option>`).join('')}</select></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>결제자</label><select id="nPayer">${PAYERS.map(p=>`<option>${p}</option>`).join('')}</select></div>
+      <div class="field"><label>날짜</label><select id="nDate"><option value="">미지정</option>${ITINERARY.map(d=>`<option value="${d.date}" ${d.date===todayISO()?'selected':''}>Day ${d.day} · ${d.date.slice(5).replace('-','/')}</option>`).join('')}</select></div>
+    </div>
+    <div class="field"><label>메모 (선택)</label><input id="nMemo" placeholder="비고"></div>
+    <button class="btn primary" id="nSave" style="width:100%">추가하기</button>
+  `;
+  document.body.append(backdrop, sheet);
+  const close = ()=>{ backdrop.remove(); sheet.remove(); };
+  backdrop.addEventListener('click', close);
+  sheet.querySelector('.sheet-close').addEventListener('click', close);
+  sheet.querySelector('#nSave').addEventListener('click', async ()=>{
+    const item = sheet.querySelector('#nItem').value.trim();
+    const amount = Number(sheet.querySelector('#nAmt').value);
+    if(!item || !amount){ sheet.querySelector('#nItem').focus(); return; }
+    const data = {
+      item, amount,
+      category: sheet.querySelector('#nCat').value,
+      payer: sheet.querySelector('#nPayer').value,
+      memo: sheet.querySelector('#nMemo').value,
+      tripDate: sheet.querySelector('#nDate').value || null,
+      createdAt: Date.now(),
+    };
+    close();
+    if(db){
+      try{ await db.collection('expenses').add(data); }
+      catch(e){ /* silently ignore; snapshot listener will not reflect it */ }
+    }
+  });
+}
+document.getElementById('fabAdd').addEventListener('click', openAddSheet);
+
+/* ---------------------------------------------------------------
+   INIT
+--------------------------------------------------------------- */
+document.getElementById('ddayLabel').textContent = ddayText();
+renderItinerary();
+renderCustomMapCard(false);
+renderMapFilters();
+renderMap();
+renderPlaceList();
+renderFlight();
+renderHotels();
+renderBudgetPlan();
+renderCategoryBreakdown();
+renderDayActuals();
+const planToggleBtn = document.getElementById('planToggle');
+if(planToggleBtn){
+  planToggleBtn.addEventListener('click', ()=>{
+    const list = document.getElementById('planDayList');
+    const open = !list.hidden;
+    list.hidden = open;
+    planToggleBtn.setAttribute('aria-expanded', String(!open));
+    planToggleBtn.textContent = open ? '일자별 보기' : '접기';
+  });
+}
+showTab((location.hash||'#it').slice(1));
+initDb();
+</script>
