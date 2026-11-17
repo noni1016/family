@@ -233,6 +233,7 @@ label{font-size:12.5px; color:var(--muted); font-weight:700; display:block; marg
 .expense-item .edit{background:none;border:none;color:var(--accent);font-size:11px;cursor:pointer;padding:2px 0}
 .cat-tag{font-size:10.5px; padding:2px 7px; border-radius:99px; background:var(--surface-2); color:var(--muted); font-weight:700}
 .cat-tag.cash-tag{background:color-mix(in srgb, var(--danger) 18%, transparent); color:var(--danger)}
+.cat-tag.warn-tag{background:color-mix(in srgb, var(--north) 22%, transparent); color:var(--north)}
 .empty{color:var(--muted); font-size:13px; text-align:center; padding:28px 10px}
 .fab{
   position:fixed; right:max(18px, env(safe-area-inset-right,0px)); bottom:calc(84px + env(safe-area-inset-bottom,0px));
@@ -1052,7 +1053,7 @@ function renderExpenses(){
     el.innerHTML = list.map(e=>`
       <div class="expense-item">
         <div>
-          <div class="item-name">${esc(e.item||'')} <span class="cat-tag">${esc(e.category||'기타')}</span>${e.payMethod==='현금'?' <span class="cat-tag cash-tag">현금</span>':''}</div>
+          <div class="item-name">${esc(e.item||'')} <span class="cat-tag">${esc(e.category||'기타')}</span>${e.payMethod==='현금'?' <span class="cat-tag cash-tag">현금</span>':''}${(e.payMethod==='현금' && !e.vndAmount)?' <span class="cat-tag warn-tag" title="동 금액이 없어서 필터 합계의 현지 금액 집계에서 제외돼요">⚠ 동 미입력</span>':''}</div>
           <div class="item-meta">${e.tripDate? (tripDateLabel(e.tripDate)+' · '):''}${esc(e.payer||'')}${e.vndAmount? ' · 현지 '+Number(e.vndAmount).toLocaleString('ko-KR')+'동'+(e.exchangeRate? ' (1:'+(Math.round(e.exchangeRate*100)/100)+')':'') : ''}${e.memo? ' · '+esc(e.memo):''}</div>
         </div>
         <div style="text-align:right">
